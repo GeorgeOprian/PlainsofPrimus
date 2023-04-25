@@ -1,9 +1,10 @@
 import express from 'express';
-import chalk from 'chalk';
 import { SequelizeService } from './config/db.js';
+import { userRouter } from './routes/user.js';
+import { handleError } from './routes/middleware.js';
 
 
-const app = express();
+export const app = express();
 app.use(express.json());
 
 app.get('/health', (req, res) => {
@@ -15,6 +16,10 @@ app.get('/health', (req, res) => {
 let sequelize = SequelizeService.getInstance();
 // await sequelize.sync();
 
+app.use('/users', userRouter);
+
+app.use(handleError);
+
 // sequelize.authenticate()
 //   .then(() => {
 //     console.log('Connection has been established successfully.');
@@ -25,5 +30,5 @@ let sequelize = SequelizeService.getInstance();
 
 app.listen(4200, (err) => {
     err && console.error(err);
-    console.log(chalk.magenta(`Server started on port`), chalk.yellow(4200));
+    console.log(`Server started on port: 4200`);
 });
