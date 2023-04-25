@@ -2,7 +2,6 @@ import request from 'supertest';
 import { app } from '../app.js';
 import { User } from '../models/user.js';
 
-
 describe('POST /users/register', () => {
     beforeAll(async () => {
       await User.sync({ force: true });
@@ -55,3 +54,53 @@ describe('POST /users/register', () => {
     });
   });
 
+describe('POST /users/login', () => {
+    beforeEach(async () => {
+        await User.create({
+        username: 'testuser',
+        password: 'testpassword',
+        role: 'client',
+        name: 'Test User'
+        });
+    });
+
+    afterEach(async () => {
+        await User.destroy({ where: { username: 'testuser' } });
+    });
+
+    it('should return a JWT token when valid credentials are provided', async () => {
+        const response = await request(app)
+        .post('/users/login')
+        .send({
+            username: 'testuser',
+            password: 'testpassword'
+        })
+        .expect(200);
+        
+        expect(response.body.token).toBeDefined();
+    });
+
+    it('should return an error message when an invalid username is provided', async () => {
+        const response = await request(app)
+        .post('/users/login')
+        .send({
+            username: 'invalidusername',
+            password: 'testpassword'
+        })
+        .expect(401);
+        
+        expect(response.body.message).toEqual('User not found');
+    });
+
+    it('should return an error message when an incorrect password is provided', async () => {
+        const response = await request(app)
+        .post('/users/login')
+        .send({
+            username: 'testuser',
+            password: 'incorrectpassword'
+        })
+        .expect(401);
+        
+        expect(response.body.message).toEqual('Incorrect password');
+    });
+});

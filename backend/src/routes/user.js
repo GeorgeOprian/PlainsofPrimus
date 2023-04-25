@@ -15,4 +15,23 @@ router.post('/register', async (req, res, next) => {
     .catch (next);
 });
 
+router.post('/login', (req, res) => {
+    const { username, password } = req.body;
+    User.findOne({
+        where: {
+            username
+        }
+    }).then(async user => {
+        if (!user) {
+            return res.status(401).json({ message: 'User not found' });
+        }
+        if (!(await User.validPassword(password, user.dataValues.password))) {
+            return res.status(401).json({ message: 'Incorrect password' });
+        }
+
+        const token = user.generateJWT();
+        return res.status(200).json({ token });
+    });
+});
+
 export { router as userRouter };
