@@ -147,7 +147,7 @@ describe('GET /achievements', () => {
   });
 });
 
-describe('GET /achievements', () => {
+describe('GET /achievements/:id', () => {
   let achievementId;
   beforeAll(async () => {
     await Achievement.sync({ force: true });
