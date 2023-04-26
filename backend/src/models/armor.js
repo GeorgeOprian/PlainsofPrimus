@@ -36,7 +36,7 @@ Armor.init(
     },
     type: {
       type: DataTypes.ENUM,
-      values: ['chestplate', 'helmet', 'legging', 'boots'],
+      values: ['chestplate', 'helmet', 'leggings', 'boots'],
       allowNull: true,
       field: "type",
     },
@@ -87,7 +87,7 @@ Armor.init(
     },
     achievementId: {
         type: DataTypes.UUID,
-        allowNull: false,
+        allowNull: true,
         field: "achievement_id",
     },
   },
