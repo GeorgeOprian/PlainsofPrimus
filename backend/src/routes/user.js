@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { User } from "../models/user.js";
+import { Character } from "../models/character.js";
 
 const router = Router();
 
@@ -11,7 +12,14 @@ router.post('/register', async (req, res, next) => {
         role: 'client',
         name
     })
-    .then((item) => res.status(201).json(item))
+    .then(async (item) => {
+        await Character.create({
+            name,
+            level: 1,
+            accountId: item.dataValues.userId
+        });
+        return res.status(201).json(item);
+    })
     .catch (next);
 });
 
