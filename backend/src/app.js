@@ -3,6 +3,7 @@ import { SequelizeService } from './config/db.js';
 import { userRouter } from './routes/user.js';
 import { handleError } from './routes/middleware.js';
 import { characterRouter } from './routes/character.js';
+import { achievementRouter } from './routes/achievement.js';
 
 
 export const app = express();
@@ -19,6 +20,7 @@ let sequelize = SequelizeService.getInstance();
 
 app.use('/users', userRouter);
 app.use('/characters', characterRouter);
+app.use('/achievements', achievementRouter);
 
 app.use(handleError);
 

@@ -22,6 +22,7 @@ Weapon.init(
     name: {
       type: DataTypes.STRING(30),
       allowNull: false,
+      unique: true,
       field: "name",
     },
     image: {
