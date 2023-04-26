@@ -2,6 +2,7 @@ import express from 'express';
 import { SequelizeService } from './config/db.js';
 import { userRouter } from './routes/user.js';
 import { handleError } from './routes/middleware.js';
+import { characterRouter } from './routes/character.js';
 
 
 export const app = express();
@@ -17,6 +18,7 @@ let sequelize = SequelizeService.getInstance();
 // await sequelize.sync();
 
 app.use('/users', userRouter);
+app.use('/characters', characterRouter);
 
 app.use(handleError);
 
