@@ -7,6 +7,7 @@ import { achievementRouter } from './routes/achievement.js';
 import { abilityRouter } from './routes/ability.js';
 import dataLoader from './bootstrap/dataLoader.js';
 import { armorRouter } from './routes/armor.js';
+import { weaponRouter } from './routes/weapon.js';
 
 
 export const app = express();
@@ -27,7 +28,8 @@ app.use('/users', userRouter);
 app.use('/characters', characterRouter);
 app.use('/achievements', achievementRouter);
 app.use('/abilities', abilityRouter);
-app.use('/armors', armorRouter)
+app.use('/armors', armorRouter);
+app.use('/weapons', weaponRouter);
 
 app.use(handleError);
 
