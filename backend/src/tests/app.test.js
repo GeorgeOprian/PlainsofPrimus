@@ -783,6 +783,70 @@ describe('DELETE /abilities', () => {
 
 // Armors
 
+describe('GET /armors', () => {
+  beforeAll(async () => {
+    await Armor.sync({ force: true });
+    await Armor.create({
+      name: 'Test Armor 1',
+      type: "chestplate",
+      armor: 10,
+    });
+    await Armor.create({
+      name: 'Test Armor 2',
+      type: "leggings",
+      armor: 20,
+    });
+  });
+
+  afterAll(async () => {
+    await Armor.destroy({ where: {} });
+  });
+
+  it('should return all armors', async () => {
+    const response = await request(app).get('/armors');
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveLength(2);
+    expect(response.body[0].name).toBe('Test Armor 1');
+    expect(response.body[0].type).toBe('chestplate');
+    expect(response.body[0].armor).toBe(10);
+    expect(response.body[1].name).toBe('Test Armor 2');
+    expect(response.body[1].type).toBe('leggings');
+    expect(response.body[1].armor).toBe(20);
+  });
+});
+
+describe('GET /armors/:id', () => {
+  let armorId;
+  beforeAll(async () => {
+    await Armor.sync({ force: true });
+    let armor = await Armor.create({
+      name: 'Test Armor 1',
+      type: "chestplate",
+      armor: 10,
+    });
+    armorId = armor.dataValues.armorId;
+
+    await Armor.create({
+      name: 'Test Armor 2',
+      type: "leggings",
+      armor: 20,
+    });
+  });
+
+  afterAll(async () => {
+    await Armor.destroy({ where: {} });
+  });
+
+  it('should return one armor', async () => {
+    const response = await request(app).get(`/armors/${armorId}`);
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveLength(1);
+    expect(response.body[0].name).toBe('Test Armor 1');
+    expect(response.body[0].type).toBe('chestplate');
+    expect(response.body[0].armor).toBe(10);
+  });
+});
+
 describe('POST /armors', () => {
   let validToken;
   let invalidToken;
