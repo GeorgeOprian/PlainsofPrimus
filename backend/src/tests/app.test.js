@@ -5,7 +5,7 @@ import { User } from '../models/user.js';
 import { Achievement } from '../models/achievement.js';
 import { Ability } from '../models/ability.js';
 import { Armor } from '../models/armor.js';
-
+import { Weapon } from '../models/weapon.js';
 
 // User
 
@@ -955,5 +955,284 @@ describe('DELETE /armors', () => {
       .set('Authorization', `Bearer ${validToken}`)
       .expect(400);
     expect(response.body.message).toBe(`invalid input syntax for type uuid: \"${invalidArmorId}\"`);
+  });
+});
+
+
+// Weapons
+
+describe('POST /weapons', () => {
+  let validToken;
+  let invalidToken;
+  let unauthorizedToken;
+  beforeAll(async () => {
+    validToken = jwt.sign({
+      userId: '1',
+      username: 'admin@pop.com',
+      role: 'admin',
+      name: 'Admin'
+    }, 'secret', {expiresIn: 60 * 300});
+    invalidToken = 'sdfsdf';
+    unauthorizedToken = jwt.sign({
+      userId: '1',
+      username: 'admin@pop.com',
+      role: 'client',
+      name: 'Admin'
+    }, 'secret', {expiresIn: 60 * 300});
+    await Weapon.sync({ force: true });
+  });
+
+  afterEach(async () => {
+    await Weapon.destroy({ where: {} });
+  });
+
+  it('creates a new weapon and returns 201', async () => {
+    const weaponData = {
+      name: 'Test Weapon',
+      image: "image",
+      attackDamage: 20,
+      specialBonus: "Cleave"
+    };
+    const response = await request(app)
+      .post('/weapons')
+      .send(weaponData)
+      .set('Authorization', `Bearer ${validToken}`)
+      .expect(201);
+    expect(response.body.name).toBe(weaponData.name);
+    expect(response.body.attackDamage).toBe(weaponData.attackDamage);
+  });
+
+  it('returns 403 if the name already exists', async () => {
+    const weaponData = {
+      name: 'Test Weapon',
+      image: "image",
+      attackDamage: 20,
+      specialBonus: "Cleave"
+    };
+    await Weapon.create(weaponData);
+    const response = await request(app)
+      .post('/weapons')
+      .send(weaponData)
+      .set('Authorization', `Bearer ${validToken}`)
+      .expect(403);
+    expect(response.body.message).toBe('Resource already exists');
+  });
+
+  it('returns 400 if the request data is invalid', async () => {
+    const weaponData = {
+      image: "image",
+      attackDamage: 20,
+      specialBonus: "Cleave"
+    };
+    const response = await request(app)
+      .post('/weapons')
+      .send(weaponData)
+      .set('Authorization', `Bearer ${validToken}`)
+      .expect(400);
+    expect(response.body.message).toBe(
+      'notNull Violation: Weapon.name cannot be null'
+    );
+  });
+
+  it('returns 400 if the intellect column is bigger than the maximum value', async () => {
+    const weaponData = {
+      name: 'Test Weapon',
+      image: "image",
+      attackDamage: "test",
+      specialBonus: "Cleave"
+    };
+    const response = await request(app)
+      .post(`/weapons`)
+      .send(weaponData)
+      .set('Authorization', `Bearer ${validToken}`)
+      .expect(400);
+    expect(response.body.message).toBe(`invalid input syntax for type integer: \"${weaponData.attackDamage}\"`);
+  });
+
+  it('returns 401 if the token is invalid', async () => {
+    const weaponData = {
+      name: 'Test Weapon',
+      image: "image",
+      attackDamage: 20,
+      specialBonus: "Cleave"
+    };
+    const response = await request(app)
+      .post('/weapons')
+      .send(weaponData)
+      .set('Authorization', `Bearer ${invalidToken}`)
+      .expect(401);
+    expect(response.body.message).toBe(
+      'Token is not valid'
+    );
+  });
+
+  it("returns 401 if the user doesn't have the necessary role", async () => {
+    const weaponData = {
+      name: 'Test Weapon',
+      image: "image",
+      attackDamage: 20,
+      specialBonus: "Cleave"
+    };
+    const response = await request(app)
+      .post('/weapons')
+      .send(weaponData)
+      .set('Authorization', `Bearer ${unauthorizedToken}`)
+      .expect(401);
+    expect(response.body.message).toBe(
+      'Not authorized'
+    );
+  });
+});
+
+describe('PUT /weapons', () => {
+  let validToken;
+  let weaponId;
+  let inexistentWeaponId;
+  let invalidWeaponId;
+  beforeAll(async () => {
+    validToken = jwt.sign({
+      userId: '1',
+      username: 'admin@pop.com',
+      role: 'admin',
+      name: 'Admin'
+    }, 'secret', {expiresIn: 60 * 300});
+    inexistentWeaponId = "b5507584-d80c-4013-a351-c088f70b30fb";
+    invalidWeaponId = "sdfsd";
+    await Weapon.sync({ force: true });
+  });
+
+  beforeEach(async () => {
+      const weapon = await Weapon.create({
+        name: 'Test Weapon',
+        image: "image",
+        attackDamage: 20,
+        specialBonus: "Cleave"
+      });
+      
+      weaponId = weapon.dataValues.weaponId;
+  });
+
+  afterEach(async () => {
+    await Weapon.destroy({ where: {} });
+  });
+
+  it('updates old weapon and returns 200', async () => {
+    const newWeaponData = {
+      name: 'Updated Weapon',
+      image: "image",
+      attackDamage: 30,
+      specialBonus: "Cleave"
+    };
+
+    const response = await request(app)
+      .put(`/weapons/${weaponId}`)
+      .send(newWeaponData)
+      .set('Authorization', `Bearer ${validToken}`)
+      .expect(200);
+    expect(response.body.name).toBe(newWeaponData.name);
+    expect(response.body.attackDamage).toBe(newWeaponData.attackDamage);
+  });
+
+  it('returns 404 if the there is no weapon with the specified id', async () => {
+    const newWeaponData = {
+      name: 'Updated Weapon',
+      attackDamage: 20,
+      specialBonus: "Cleave"
+    };
+    const response = await request(app)
+      .put(`/weapons/${inexistentWeaponId}`)
+      .send(newWeaponData)
+      .set('Authorization', `Bearer ${validToken}`)
+      .expect(404);
+    expect(response.body.error).toBe('Record not found');
+  });
+
+  it('returns 400 if the id is invalid', async () => {
+    const newWeaponData = {
+      name: 'Updated Weapon',
+      attackDamage: 20,
+      specialBonus: "Cleave"
+    };
+    const response = await request(app)
+      .put(`/weapons/${invalidWeaponId}`)
+      .send(newWeaponData)
+      .set('Authorization', `Bearer ${validToken}`)
+      .expect(400);
+    expect(response.body.message).toBe(`invalid input syntax for type uuid: \"${invalidWeaponId}\"`);
+  });
+
+  it('returns 403 if the name already exists', async () => {
+    const newWeaponData = {
+      name: 'Test Unique Weapon',
+      attackDamage: 20,
+      specialBonus: "Cleave"
+    };
+    await Weapon.create({
+      name: 'Test Unique Weapon',
+      attackDamage: 20,
+      specialBonus: "Cleave"
+    });
+    const response = await request(app)
+      .put(`/weapons/${weaponId}`)
+      .send(newWeaponData)
+      .set('Authorization', `Bearer ${validToken}`)
+      .expect(403);
+    expect(response.body.message).toBe('Resource already exists');
+  });
+});
+
+describe('DELETE /weapons', () => {
+  let validToken;
+  let weaponId;
+  let inexistentWeaponId;
+  let invalidWeaponId;
+  beforeAll(async () => {
+    validToken = jwt.sign({
+      userId: '1',
+      username: 'admin@pop.com',
+      role: 'admin',
+      name: 'Admin'
+    }, 'secret', {expiresIn: 60 * 300});
+    inexistentWeaponId = "b5507584-d80c-4013-a351-c088f70b30fb";
+    invalidWeaponId = "sdfsd";
+    await Weapon.sync({ force: true });
+  });
+
+  beforeEach(async () => {
+      const weapon = await Weapon.create({
+        name: 'Test Weapon',
+        attackDamage: 20,
+        specialBonus: "Cleave"
+      });
+      
+      weaponId = weapon.dataValues.weaponId;
+  });
+
+  afterEach(async () => {
+    await Weapon.destroy({ where: {} });
+  });
+
+  it('deletes weapon and returns 200', async () => {
+    const response = await request(app)
+      .delete(`/weapons/${weaponId}`)
+      .set('Authorization', `Bearer ${validToken}`)
+      .expect(200);
+    expect(response.body.message).toBe('Record deleted');
+  });
+
+  it('returns 404 if the there is no weapon with the specified id', async () => {
+    const response = await request(app)
+      .delete(`/weapons/${inexistentWeaponId}`)
+      .set('Authorization', `Bearer ${validToken}`)
+      .expect(404);
+    expect(response.body.error).toBe('Record not found');
+  });
+
+  it('returns 400 if the id is invalid', async () => {
+    const response = await request(app)
+      .delete(`/weapons/${invalidWeaponId}`)
+      .set('Authorization', `Bearer ${validToken}`)
+      .expect(400);
+    expect(response.body.message).toBe(`invalid input syntax for type uuid: \"${invalidWeaponId}\"`);
   });
 });
