@@ -4,6 +4,27 @@ import { checkRole } from "./middleware.js";
 
 const router = Router();
 
+router.get('/', async (req, res) => {
+    Achievement.findAll({
+        raw:true
+    })
+    .then(records => {
+        res.json(records)
+    })
+    .catch(err => res.status(500).json({ error: err.message }));
+});
+
+router.get('/:id', async (req, res) => {
+    Achievement.findAll({
+        where: { achievement_id: req.params.id },
+        raw:true
+    })
+    .then(record => {
+        res.json(record)
+    })
+    .catch(err => res.status(500).json({ error: err.message }));
+});
+
 router.post('/', checkRole(['admin']), async (req, res, next) => {
     Achievement.create(req.body)
     .then((item) => res.status(201).json(item))
