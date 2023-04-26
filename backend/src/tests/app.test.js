@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import { User } from '../models/user.js';
 import { Achievement } from '../models/achievement.js';
 import { Ability } from '../models/ability.js';
+import { Armor } from '../models/armor.js';
 
 
 // User
@@ -443,7 +444,7 @@ describe('POST /abilities', () => {
     );
   });
 
-  it('returns 400 if the scalesWith column is invalid', async () => {
+  it('returns 400 if the scalesWith column is not in enum', async () => {
     const abilityData = {
       name: 'Test Ability',
       levelRequirement: 10,
@@ -647,5 +648,312 @@ describe('DELETE /abilities', () => {
       .set('Authorization', `Bearer ${validToken}`)
       .expect(400);
     expect(response.body.message).toBe(`invalid input syntax for type uuid: \"${invalidAbilityId}\"`);
+  });
+});
+
+
+// Armors
+
+describe('POST /armors', () => {
+  let validToken;
+  let invalidToken;
+  let unauthorizedToken;
+  beforeAll(async () => {
+    validToken = jwt.sign({
+      userId: '1',
+      username: 'admin@pop.com',
+      role: 'admin',
+      name: 'Admin'
+    }, 'secret', {expiresIn: 60 * 300});
+    invalidToken = 'sdfsdf';
+    unauthorizedToken = jwt.sign({
+      userId: '1',
+      username: 'admin@pop.com',
+      role: 'client',
+      name: 'Admin'
+    }, 'secret', {expiresIn: 60 * 300});
+    await Armor.sync({ force: true });
+  });
+
+  afterEach(async () => {
+    await Armor.destroy({ where: {} });
+  });
+
+  it('creates a new armor and returns 201', async () => {
+    const armorData = {
+      name: 'Test Armor',
+      image: "image",
+      type: "chestplate",
+      armor: 10,
+      health: 10,
+      intellect: 10
+    };
+    const response = await request(app)
+      .post('/armors')
+      .send(armorData)
+      .set('Authorization', `Bearer ${validToken}`)
+      .expect(201);
+    expect(response.body.name).toBe(armorData.name);
+    expect(response.body.type).toBe(armorData.type);
+    expect(response.body.armor).toBe(armorData.armor);
+  });
+
+  it('returns 403 if the name already exists', async () => {
+    const armorData = {
+      name: 'Test Armor',
+      image: "image",
+      type: "chestplate",
+      armor: 10,
+      health: 10,
+      intellect: 10
+    };
+    await Armor.create(armorData);
+    const response = await request(app)
+      .post('/armors')
+      .send(armorData)
+      .set('Authorization', `Bearer ${validToken}`)
+      .expect(403);
+    expect(response.body.message).toBe('Resource already exists');
+  });
+
+  it('returns 400 if the request data is invalid', async () => {
+    const armorData = {
+      image: "image",
+      type: "chestplate",
+      armor: 10,
+      health: 10,
+      intellect: 10
+    };
+    const response = await request(app)
+      .post('/armors')
+      .send(armorData)
+      .set('Authorization', `Bearer ${validToken}`)
+      .expect(400);
+    expect(response.body.message).toBe(
+      'notNull Violation: Armor.name cannot be null'
+    );
+  });
+
+  it('returns 400 if the intellect column is bigger than the maximum value', async () => {
+    const armorData = {
+      name: 'Test Armor',
+      image: "image",
+      type: "chestplate",
+      armor: 10,
+      health: 10,
+      intellect: 1000
+    };
+    const response = await request(app)
+      .post(`/armors`)
+      .send(armorData)
+      .set('Authorization', `Bearer ${validToken}`)
+      .expect(400);
+    expect(response.body.message).toBe('Validation error: Validation max on intellect failed');
+  });
+
+  it('returns 401 if the token is invalid', async () => {
+    const armorData = {
+      name: 'Test Armor',
+      image: "image",
+      type: "chestplate",
+      armor: 10,
+      health: 10,
+      intellect: 10
+    };
+    const response = await request(app)
+      .post('/armors')
+      .send(armorData)
+      .set('Authorization', `Bearer ${invalidToken}`)
+      .expect(401);
+    expect(response.body.message).toBe(
+      'Token is not valid'
+    );
+  });
+
+  it("returns 401 if the user doesn't have the necessary role", async () => {
+    const armorData = {
+      name: 'Test Armor',
+      image: "image",
+      type: "chestplate",
+      armor: 10,
+      health: 10,
+      intellect: 10
+    };
+    const response = await request(app)
+      .post('/armors')
+      .send(armorData)
+      .set('Authorization', `Bearer ${unauthorizedToken}`)
+      .expect(401);
+    expect(response.body.message).toBe(
+      'Not authorized'
+    );
+  });
+});
+
+describe('PUT /armors', () => {
+  let validToken;
+  let armorId;
+  let inexistentArmorId;
+  let invalidArmorId;
+  beforeAll(async () => {
+    validToken = jwt.sign({
+      userId: '1',
+      username: 'admin@pop.com',
+      role: 'admin',
+      name: 'Admin'
+    }, 'secret', {expiresIn: 60 * 300});
+    inexistentArmorId = "b5507584-d80c-4013-a351-c088f70b30fb";
+    invalidArmorId = "sdfsd";
+    await Armor.sync({ force: true });
+  });
+
+  beforeEach(async () => {
+      const armor = await Armor.create({
+        name: 'Test Armor',
+        image: "image",
+        type: "chestplate",
+        armor: 10,
+        health: 10,
+        intellect: 10
+      });
+      
+      armorId = armor.dataValues.armorId;
+  });
+
+  afterEach(async () => {
+    await Armor.destroy({ where: {} });
+  });
+
+  it('updates old armor and returns 200', async () => {
+    const newArmorData = {
+      name: 'Updated Armor',
+      image: "image",
+      type: "leggings",
+      armor: 30,
+      health: 10,
+      intellect: 10
+    };
+
+    const response = await request(app)
+      .put(`/armors/${armorId}`)
+      .send(newArmorData)
+      .set('Authorization', `Bearer ${validToken}`)
+      .expect(200);
+    expect(response.body.name).toBe(newArmorData.name);
+    expect(response.body.type).toBe(newArmorData.type);
+    expect(response.body.armor).toBe(newArmorData.armor);
+  });
+
+  it('returns 404 if the there is no armor with the specified id', async () => {
+    const newArmorData = {
+      name: 'Updated Armor',
+        type: "chestplate",
+        armor: 10,
+        health: 10,
+        intellect: 10
+    };
+    const response = await request(app)
+      .put(`/armors/${inexistentArmorId}`)
+      .send(newArmorData)
+      .set('Authorization', `Bearer ${validToken}`)
+      .expect(404);
+    expect(response.body.error).toBe('Record not found');
+  });
+
+  it('returns 400 if the id is invalid', async () => {
+    const newArmorData = {
+      name: 'Updated Armor',
+      type: "chestplate",
+      armor: 10,
+      health: 10,
+      intellect: 10
+    };
+    const response = await request(app)
+      .put(`/armors/${invalidArmorId}`)
+      .send(newArmorData)
+      .set('Authorization', `Bearer ${validToken}`)
+      .expect(400);
+    expect(response.body.message).toBe(`invalid input syntax for type uuid: \"${invalidArmorId}\"`);
+  });
+
+  it('returns 403 if the name already exists', async () => {
+    const newArmorData = {
+      name: 'Test Unique Armor',
+      type: "chestplate",
+      armor: 10,
+      health: 10,
+      intellect: 10
+    };
+    await Armor.create({
+      name: 'Test Unique Armor',
+      type: "chestplate",
+      armor: 10,
+      health: 10,
+      intellect: 10
+    });
+    const response = await request(app)
+      .put(`/armors/${armorId}`)
+      .send(newArmorData)
+      .set('Authorization', `Bearer ${validToken}`)
+      .expect(403);
+    expect(response.body.message).toBe('Resource already exists');
+  });
+});
+
+describe('DELETE /armors', () => {
+  let validToken;
+  let armorId;
+  let inexistentArmorId;
+  let invalidArmorId;
+  beforeAll(async () => {
+    validToken = jwt.sign({
+      userId: '1',
+      username: 'admin@pop.com',
+      role: 'admin',
+      name: 'Admin'
+    }, 'secret', {expiresIn: 60 * 300});
+    inexistentArmorId = "b5507584-d80c-4013-a351-c088f70b30fb";
+    invalidArmorId = "sdfsd";
+    await Armor.sync({ force: true });
+  });
+
+  beforeEach(async () => {
+      const armor = await Armor.create({
+        name: 'Test Armor',
+        type: "chestplate",
+        armor: 10,
+        health: 10,
+        intellect: 10
+      });
+      
+      armorId = armor.dataValues.armorId;
+  });
+
+  afterEach(async () => {
+    await Armor.destroy({ where: {} });
+  });
+
+  it('deletes armor and returns 200', async () => {
+    const response = await request(app)
+      .delete(`/armors/${armorId}`)
+      .set('Authorization', `Bearer ${validToken}`)
+      .expect(200);
+    expect(response.body.message).toBe('Record deleted');
+  });
+
+  it('returns 404 if the there is no armor with the specified id', async () => {
+    const response = await request(app)
+      .delete(`/armors/${inexistentArmorId}`)
+      .set('Authorization', `Bearer ${validToken}`)
+      .expect(404);
+    expect(response.body.error).toBe('Record not found');
+  });
+
+  it('returns 400 if the id is invalid', async () => {
+    const response = await request(app)
+      .delete(`/armors/${invalidArmorId}`)
+      .set('Authorization', `Bearer ${validToken}`)
+      .expect(400);
+    expect(response.body.message).toBe(`invalid input syntax for type uuid: \"${invalidArmorId}\"`);
   });
 });

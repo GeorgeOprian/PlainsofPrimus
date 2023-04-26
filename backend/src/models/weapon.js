@@ -46,7 +46,7 @@ Weapon.init(
     },
     achievementId: {
         type: DataTypes.UUID,
-        allowNull: false,
+        allowNull: true,
         field: "achievement_id",
     },
   },
