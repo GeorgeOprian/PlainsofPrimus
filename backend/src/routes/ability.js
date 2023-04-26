@@ -4,6 +4,27 @@ import { checkRole } from "./middleware.js";
 
 const router = Router();
 
+router.get('/', async (req, res) => {
+    Ability.findAll({
+        raw:true
+    })
+    .then(records => {
+        res.json(records)
+    })
+    .catch(err => res.status(500).json({ error: err.message }));
+});
+
+router.get('/:id', async (req, res) => {
+    Ability.findAll({
+        where: { ability_id: req.params.id },
+        raw:true
+    })
+    .then(record => {
+        res.json(record)
+    })
+    .catch(err => res.status(500).json({ error: err.message }));
+});
+
 router.post('/', checkRole(['admin']), async (req, res, next) => {
     Ability.create(req.body)
     .then((item) => res.status(201).json(item))
