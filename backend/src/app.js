@@ -4,6 +4,8 @@ import { userRouter } from './routes/user.js';
 import { handleError } from './routes/middleware.js';
 import { characterRouter } from './routes/character.js';
 import { achievementRouter } from './routes/achievement.js';
+import { abilityRouter } from './routes/ability.js';
+import dataLoader from './bootstrap/dataLoader.js';
 
 
 export const app = express();
@@ -18,9 +20,12 @@ app.get('/health', (req, res) => {
 let sequelize = SequelizeService.getInstance();
 // await sequelize.sync();
 
+// dataLoader();
+
 app.use('/users', userRouter);
 app.use('/characters', characterRouter);
 app.use('/achievements', achievementRouter);
+app.use('/abilities', abilityRouter);
 
 app.use(handleError);
 

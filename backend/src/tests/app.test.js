@@ -3,6 +3,10 @@ import { app } from '../app.js';
 import jwt from 'jsonwebtoken';
 import { User } from '../models/user.js';
 import { Achievement } from '../models/achievement.js';
+import { Ability } from '../models/ability.js';
+
+
+// User
 
 describe('POST /users/register', () => {
   beforeAll(async () => {
@@ -106,6 +110,9 @@ describe('POST /users/login', () => {
         expect(response.body.message).toEqual('Incorrect password');
     });
 });
+
+
+// Achievement
 
 describe('POST /achievements', () => {
   let validToken;
@@ -358,5 +365,287 @@ describe('DELETE /achievements', () => {
       .set('Authorization', `Bearer ${validToken}`)
       .expect(400);
     expect(response.body.message).toBe(`invalid input syntax for type uuid: \"${invalidAchievementId}\"`);
+  });
+});
+
+
+// Ability
+describe('POST /abilities', () => {
+  let validToken;
+  let invalidToken;
+  let unauthorizedToken;
+  beforeAll(async () => {
+    validToken = jwt.sign({
+      userId: '1',
+      username: 'admin@pop.com',
+      role: 'admin',
+      name: 'Admin'
+    }, 'secret', {expiresIn: 60 * 300});
+    invalidToken = 'sdfsdf';
+    unauthorizedToken = jwt.sign({
+      userId: '1',
+      username: 'admin@pop.com',
+      role: 'client',
+      name: 'Admin'
+    }, 'secret', {expiresIn: 60 * 300});
+    await Ability.sync({ force: true });
+  });
+
+  afterEach(async () => {
+    await Ability.destroy({ where: {} });
+  });
+
+  it('creates a new ability and returns 201', async () => {
+    const abilityData = {
+      name: 'Test Ability',
+      levelRequirement: 10,
+      scalesWith: 'intellect',
+      effect: 'Test Effect'
+    };
+    const response = await request(app)
+      .post('/abilities')
+      .send(abilityData)
+      .set('Authorization', `Bearer ${validToken}`)
+      .expect(201);
+    expect(response.body.name).toBe(abilityData.name);
+    expect(response.body.points).toBe(abilityData.points);
+  });
+
+  it('returns 403 if the name already exists', async () => {
+    const abilityData = {
+      name: 'Test Ability',
+      levelRequirement: 10,
+      scalesWith: 'intellect',
+      effect: 'Test Effect'
+    };
+    await Ability.create(abilityData);
+    const response = await request(app)
+      .post('/abilities')
+      .send(abilityData)
+      .set('Authorization', `Bearer ${validToken}`)
+      .expect(403);
+    expect(response.body.message).toBe('Resource already exists');
+  });
+
+  it('returns 400 if the request data is invalid', async () => {
+    const abilityData = {
+      levelRequirement: 10,
+      scalesWith: 'intellect',
+      effect: 'Test Effect'
+    };
+    const response = await request(app)
+      .post('/abilities')
+      .send(abilityData)
+      .set('Authorization', `Bearer ${validToken}`)
+      .expect(400);
+    expect(response.body.message).toBe(
+      'notNull Violation: Ability.name cannot be null'
+    );
+  });
+
+  it('returns 400 if the scalesWith column is invalid', async () => {
+    const abilityData = {
+      name: 'Test Ability',
+      levelRequirement: 10,
+      scalesWith: 'dexterity',
+      effect: 'Test Effect'
+    };
+    const response = await request(app)
+      .post(`/abilities`)
+      .send(abilityData)
+      .set('Authorization', `Bearer ${validToken}`)
+      .expect(400);
+    expect(response.body.message).toBe(`invalid input value for enum enum_abilities_scales_with: \"${abilityData.scalesWith}\"`);
+  });
+
+  it('returns 401 if the token is invalid', async () => {
+    const abilityData = {
+      name: 'Test Ability',
+      levelRequirement: 10,
+      scalesWith: 'intellect',
+      effect: 'Test Effect'
+    };
+    const response = await request(app)
+      .post('/abilities')
+      .send(abilityData)
+      .set('Authorization', `Bearer ${invalidToken}`)
+      .expect(401);
+    expect(response.body.message).toBe(
+      'Token is not valid'
+    );
+  });
+
+  it("returns 401 if the user doesn't have the necessary role", async () => {
+    const abilityData = {
+      name: 'Test Ability',
+      levelRequirement: 10,
+      scalesWith: 'intellect',
+      effect: 'Test Effect'
+    };
+    const response = await request(app)
+      .post('/abilities')
+      .send(abilityData)
+      .set('Authorization', `Bearer ${unauthorizedToken}`)
+      .expect(401);
+    expect(response.body.message).toBe(
+      'Not authorized'
+    );
+  });
+});
+
+describe('PUT /abilities', () => {
+  let validToken;
+  let abilityId;
+  let inexistentAbilityId;
+  let invalidAbilityId;
+  beforeAll(async () => {
+    validToken = jwt.sign({
+      userId: '1',
+      username: 'admin@pop.com',
+      role: 'admin',
+      name: 'Admin'
+    }, 'secret', {expiresIn: 60 * 300});
+    inexistentAbilityId = "b5507584-d80c-4013-a351-c088f70b30fb";
+    invalidAbilityId = "sdfsd";
+    await Ability.sync({ force: true });
+  });
+
+  beforeEach(async () => {
+      const ability = await Ability.create({
+        name: 'Test Ability',
+        levelRequirement: 10,
+        scalesWith: 'intellect',
+        effect: 'Test Effect'
+      });
+      
+      abilityId = ability.dataValues.abilityId;
+  });
+
+  afterEach(async () => {
+    await Ability.destroy({ where: {} });
+  });
+
+  it('updates old ability and returns 200', async () => {
+    const newAbilityData = {
+      name: 'Updated Ability',
+      levelRequirement: 10,
+      scalesWith: 'intellect',
+      effect: 'Test Effect'
+    };
+
+    const response = await request(app)
+      .put(`/abilities/${abilityId}`)
+      .send(newAbilityData)
+      .set('Authorization', `Bearer ${validToken}`)
+      .expect(200);
+    expect(response.body.name).toBe(newAbilityData.name);
+    expect(response.body.points).toBe(newAbilityData.points);
+  });
+
+  it('returns 404 if the there is no ability with the specified id', async () => {
+    const newAbilityData = {
+      name: 'Updated Ability',
+      levelRequirement: 10,
+      scalesWith: 'intellect',
+      effect: 'Test Effect'
+    };
+    const response = await request(app)
+      .put(`/abilities/${inexistentAbilityId}`)
+      .send(newAbilityData)
+      .set('Authorization', `Bearer ${validToken}`)
+      .expect(404);
+    expect(response.body.error).toBe('Record not found');
+  });
+
+  it('returns 400 if the id is invalid', async () => {
+    const newAbilityData = {
+      name: 'Updated Ability',
+      levelRequirement: 10,
+      scalesWith: 'intellect',
+      effect: 'Test Effect'
+    };
+    const response = await request(app)
+      .put(`/abilities/${invalidAbilityId}`)
+      .send(newAbilityData)
+      .set('Authorization', `Bearer ${validToken}`)
+      .expect(400);
+    expect(response.body.message).toBe(`invalid input syntax for type uuid: \"${invalidAbilityId}\"`);
+  });
+
+  it('returns 403 if the name already exists', async () => {
+    const newAbilityData = {
+      name: 'Test Unique Ability',
+      levelRequirement: 10,
+      scalesWith: 'intellect',
+      effect: 'Test Effect'
+    };
+    await Ability.create({
+      name: 'Test Unique Ability',
+      points: 100,
+      requirements: 'Test Requirements',
+    });
+    const response = await request(app)
+      .put(`/abilities/${abilityId}`)
+      .send(newAbilityData)
+      .set('Authorization', `Bearer ${validToken}`)
+      .expect(403);
+    expect(response.body.message).toBe('Resource already exists');
+  });
+});
+
+describe('DELETE /abilities', () => {
+  let validToken;
+  let abilityId;
+  let inexistentAbilityId;
+  let invalidAbilityId;
+  beforeAll(async () => {
+    validToken = jwt.sign({
+      userId: '1',
+      username: 'admin@pop.com',
+      role: 'admin',
+      name: 'Admin'
+    }, 'secret', {expiresIn: 60 * 300});
+    inexistentAbilityId = "b5507584-d80c-4013-a351-c088f70b30fb";
+    invalidAbilityId = "sdfsd";
+    await Ability.sync({ force: true });
+  });
+
+  beforeEach(async () => {
+      const ability = await Ability.create({
+        name: 'Test Ability',
+        levelRequirement: 10,
+        scalesWith: 'intellect',
+        effect: 'Test Effect'
+      });
+      
+      abilityId = ability.dataValues.abilityId;
+  });
+
+  afterEach(async () => {
+    await Ability.destroy({ where: {} });
+  });
+
+  it('deletes ability and returns 200', async () => {
+    const response = await request(app)
+      .delete(`/abilities/${abilityId}`)
+      .set('Authorization', `Bearer ${validToken}`)
+      .expect(200);
+    expect(response.body.message).toBe('Record deleted');
+  });
+
+  it('returns 404 if the there is no ability with the specified id', async () => {
+    const response = await request(app)
+      .delete(`/abilities/${inexistentAbilityId}`)
+      .set('Authorization', `Bearer ${validToken}`)
+      .expect(404);
+    expect(response.body.error).toBe('Record not found');
+  });
+
+  it('returns 400 if the id is invalid', async () => {
+    const response = await request(app)
+      .delete(`/abilities/${invalidAbilityId}`)
+      .set('Authorization', `Bearer ${validToken}`)
+      .expect(400);
+    expect(response.body.message).toBe(`invalid input syntax for type uuid: \"${invalidAbilityId}\"`);
   });
 });
