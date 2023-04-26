@@ -1154,6 +1154,70 @@ describe('DELETE /armors', () => {
 
 // Weapons
 
+describe('GET /weapons', () => {
+  beforeAll(async () => {
+    await Weapon.sync({ force: true });
+    await Weapon.create({
+      name: 'Test Weapon 1',
+      attackDamage: 20,
+      specialBonus: "Test bonus 1"
+    });
+    await Weapon.create({
+      name: 'Test Weapon 2',
+      attackDamage: 30,
+      specialBonus: "Test bonus 2"
+    });
+  });
+
+  afterAll(async () => {
+    await Weapon.destroy({ where: {} });
+  });
+
+  it('should return all weapons', async () => {
+    const response = await request(app).get('/weapons');
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveLength(2);
+    expect(response.body[0].name).toBe('Test Weapon 1');
+    expect(response.body[0].attackDamage).toBe(20);
+    expect(response.body[0].specialBonus).toBe('Test bonus 1');
+    expect(response.body[1].name).toBe('Test Weapon 2');
+    expect(response.body[1].attackDamage).toBe(30);
+    expect(response.body[1].specialBonus).toBe('Test bonus 2');
+  });
+});
+
+describe('GET /weapons/:id', () => {
+  let weaponId;
+  beforeAll(async () => {
+    await Weapon.sync({ force: true });
+    let weapon = await Weapon.create({
+      name: 'Test Weapon 1',
+      attackDamage: 20,
+      specialBonus: "Test bonus 1"
+    });
+    weaponId = weapon.dataValues.weaponId;
+
+    await Weapon.create({
+      name: 'Test Weapon 2',
+      attackDamage: 30,
+      specialBonus: "Test bonus 2"
+    });
+  });
+
+  afterAll(async () => {
+    await Weapon.destroy({ where: {} });
+  });
+
+  it('should return one weapon', async () => {
+    const response = await request(app).get(`/weapons/${weaponId}`);
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveLength(1);
+    expect(response.body[0].name).toBe('Test Weapon 1');
+    expect(response.body[0].attackDamage).toBe(20);
+    expect(response.body[0].specialBonus).toBe('Test bonus 1');
+  });
+});
+
 describe('POST /weapons', () => {
   let validToken;
   let invalidToken;
