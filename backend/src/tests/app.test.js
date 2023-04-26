@@ -435,6 +435,71 @@ describe('DELETE /achievements', () => {
 
 
 // Ability
+
+describe('GET /abilities', () => {
+  beforeAll(async () => {
+    await Ability.sync({ force: true });
+    await Ability.create({
+      name: 'Test Ability 1',
+      levelRequirement: 10,
+      scalesWith: "intellect"
+    });
+    await Ability.create({
+      name: 'Test Ability 2',
+      levelRequirement: 20,
+      scalesWith: "strength"
+    });
+  });
+
+  afterAll(async () => {
+    await Ability.destroy({ where: {} });
+  });
+
+  it('should return all abilities', async () => {
+    const response = await request(app).get('/abilities');
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveLength(2);
+    expect(response.body[0].name).toBe('Test Ability 1');
+    expect(response.body[0].levelRequirement).toBe(10);
+    expect(response.body[0].scalesWith).toBe('intellect');
+    expect(response.body[1].name).toBe('Test Ability 2');
+    expect(response.body[1].levelRequirement).toBe(20);
+    expect(response.body[1].scalesWith).toBe('strength');
+  });
+});
+
+describe('GET /abilities/:id', () => {
+  let abilityId;
+  beforeAll(async () => {
+    await Ability.sync({ force: true });
+    let ability = await Ability.create({
+      name: 'Test Ability 1',
+      levelRequirement: 10,
+      scalesWith: "intellect"
+    });
+    abilityId = ability.dataValues.abilityId;
+
+    await Ability.create({
+      name: 'Test Ability 2',
+      levelRequirement: 20,
+      scalesWith: "strength"
+    });
+  });
+
+  afterAll(async () => {
+    await Ability.destroy({ where: {} });
+  });
+
+  it('should return one ability', async () => {
+    const response = await request(app).get(`/abilities/${abilityId}`);
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveLength(1);
+    expect(response.body[0].name).toBe('Test Ability 1');
+    expect(response.body[0].levelRequirement).toBe(10);
+    expect(response.body[0].scalesWith).toBe('intellect');
+  });
+});
+
 describe('POST /abilities', () => {
   let validToken;
   let invalidToken;
