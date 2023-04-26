@@ -115,6 +115,70 @@ describe('POST /users/login', () => {
 
 // Achievement
 
+describe('GET /achievements', () => {
+  beforeAll(async () => {
+    await Achievement.sync({ force: true });
+    await Achievement.create({
+      name: 'Test Achievement 1',
+      points: 50,
+      requirements: 'Complete Test 1',
+    });
+    await Achievement.create({
+      name: 'Test Achievement 2',
+      points: 20,
+      requirements: 'Complete Test 2',
+    });
+  });
+
+  afterAll(async () => {
+    await Achievement.destroy({ where: {} });
+  });
+
+  it('should return all achievements', async () => {
+    const response = await request(app).get('/achievements');
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveLength(2);
+    expect(response.body[0].name).toBe('Test Achievement 1');
+    expect(response.body[0].points).toBe(50);
+    expect(response.body[0].requirements).toBe('Complete Test 1');
+    expect(response.body[1].name).toBe('Test Achievement 2');
+    expect(response.body[1].points).toBe(20);
+    expect(response.body[1].requirements).toBe('Complete Test 2');
+  });
+});
+
+describe('GET /achievements', () => {
+  let achievementId;
+  beforeAll(async () => {
+    await Achievement.sync({ force: true });
+    let achievement = await Achievement.create({
+      name: 'Test Achievement 1',
+      points: 50,
+      requirements: 'Complete Test 1',
+    });
+    achievementId = achievement.dataValues.achievementId;
+
+    await Achievement.create({
+      name: 'Test Achievement 2',
+      points: 20,
+      requirements: 'Complete Test 2',
+    });
+  });
+
+  afterAll(async () => {
+    await Achievement.destroy({ where: {} });
+  });
+
+  it('should return one achievement', async () => {
+    const response = await request(app).get(`/achievements/${achievementId}`);
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveLength(1);
+    expect(response.body[0].name).toBe('Test Achievement 1');
+    expect(response.body[0].points).toBe(50);
+    expect(response.body[0].requirements).toBe('Complete Test 1');
+  });
+});
+
 describe('POST /achievements', () => {
   let validToken;
   let invalidToken;
