@@ -7,11 +7,75 @@ import { Armor } from "../models/armor.js";
 import { Weapon } from "../models/weapon.js";
 import { CharacterAbility } from "../models/characterAbility.js";
 import { CharacterAchievement } from "../models/characterAchievement.js";
+import { checkRole } from "./middleware.js";
 import { SequelizeService } from "../config/db.js";
 import { Sequelize } from "sequelize";
 
 const router = Router();
 const sequelize = SequelizeService.getInstance();
+
+router.get('/sync', checkRole(['sync_manager']), async (req, res) => {
+    Character.findAll({
+        raw:true
+    })
+    .then(async records => {
+        let characters = await Promise.all(records.map(async item => {
+            const achievements = await sequelize.query(
+                `SELECT *
+                 FROM "achievements"
+                 INNER JOIN "character_achievements" ON "achievements"."achievement_id" = "character_achievements"."achievement_id"
+                 WHERE "character_achievements"."character_id" = :characterId`,
+                {
+                  replacements: { characterId: item.characterId},
+                  type: Sequelize.QueryTypes.SELECT,
+                  model: Achievement,
+                  mapToModel: true,
+                  include: [CharacterAchievement],
+                }
+            );
+            return {
+                characterId: item.characterId,
+                name: item.name,
+                level: item.level,
+                achievements
+            }
+        }));
+        res.json(characters)
+    })
+    .catch(err => res.status(500).json({ error: err.message }));
+});
+
+router.get('/sync/:id', checkRole(['sync_manager']), async (req, res) => {
+    Character.findAll({
+        where: { character_id: req.params.id },
+        raw:true
+    })
+    .then(async records => {
+        let characters = await Promise.all(records.map(async item => {
+            const achievements = await sequelize.query(
+                `SELECT *
+                 FROM "achievements"
+                 INNER JOIN "character_achievements" ON "achievements"."achievement_id" = "character_achievements"."achievement_id"
+                 WHERE "character_achievements"."character_id" = :characterId`,
+                {
+                  replacements: { characterId: item.characterId},
+                  type: Sequelize.QueryTypes.SELECT,
+                  model: Achievement,
+                  mapToModel: true,
+                  include: [CharacterAchievement],
+                }
+            );
+            return {
+                characterId: item.characterId,
+                name: item.name,
+                level: item.level,
+                achievements
+            }
+        }));
+        res.json(characters)
+    })
+    .catch(err => res.status(500).json({ error: err.message }));
+});
 
 router.get('/:id', async (req, res) => {
     let accountId = req.params.id;
