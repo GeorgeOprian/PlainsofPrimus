@@ -21,7 +21,7 @@ router.get('/sync', checkRole(['sync_manager']), async (req, res) => {
     .then(async records => {
         let characters = await Promise.all(records.map(async item => {
             const achievements = await sequelize.query(
-                `SELECT *
+                `SELECT "achievements"."achievement_id", "achievements"."name", "achievements"."points", "achievements"."requirements"
                  FROM "achievements"
                  INNER JOIN "character_achievements" ON "achievements"."achievement_id" = "character_achievements"."achievement_id"
                  WHERE "character_achievements"."character_id" = :characterId`,
@@ -53,7 +53,7 @@ router.get('/sync/:id', checkRole(['sync_manager']), async (req, res) => {
     .then(async records => {
         let characters = await Promise.all(records.map(async item => {
             const achievements = await sequelize.query(
-                `SELECT *
+                `SELECT "achievements"."achievement_id", "achievements"."name", "achievements"."points", "achievements"."requirements"
                  FROM "achievements"
                  INNER JOIN "character_achievements" ON "achievements"."achievement_id" = "character_achievements"."achievement_id"
                  WHERE "character_achievements"."character_id" = :characterId`,
@@ -132,7 +132,7 @@ router.get('/:id', async (req, res) => {
         }
 
         const abilities = await sequelize.query(
-            `SELECT *
+            `SELECT "abilities"."ability_id", "abilities"."name", "abilities"."level_requirement", "abilities"."scales_with", "abilities"."effect"
              FROM "abilities"
              INNER JOIN "character_abilities" ON "abilities"."ability_id" = "character_abilities"."ability_id"
              WHERE "character_abilities"."character_id" = :characterId`,
@@ -147,7 +147,7 @@ router.get('/:id', async (req, res) => {
 
         let points = 0;
         const achievements = await sequelize.query(
-            `SELECT *
+            `SELECT "achievements"."achievement_id", "achievements"."name", "achievements"."points", "achievements"."requirements"
              FROM "achievements"
              INNER JOIN "character_achievements" ON "achievements"."achievement_id" = "character_achievements"."achievement_id"
              WHERE "character_achievements"."character_id" = :characterId`,
@@ -181,6 +181,52 @@ router.get('/:id', async (req, res) => {
 
         return res.status(200).json({ newCharacter });
     });
+});
+
+router.patch('/sync/:id', checkRole(['sync_manager']), (req, res, next) => {
+    const {level, achievements} = req.body;
+    Character.update({level}, {
+      where: { character_id: req.params.id },
+      returning: true
+    })
+    .then(async ([ affectedCount, affectedRows ]) => {
+        if (affectedCount) {
+            let character = {
+                characterId: affectedRows[0].dataValues.characterId,
+                name: affectedRows[0].dataValues.name,
+                level: affectedRows[0].dataValues.level
+            }
+            
+            await CharacterAchievement.destroy({
+                where: { character_id: req.params.id },
+            });
+            await Promise.all(achievements.map(async item => {
+                return await CharacterAchievement.create({
+                    characterId: character.characterId,
+                    achievementId: item.achievementId
+                })
+            }));
+
+            const newAchievements = await sequelize.query(
+                `SELECT "achievements"."achievement_id", "achievements"."name", "achievements"."points", "achievements"."requirements"
+                 FROM "achievements"
+                 INNER JOIN "character_achievements" ON "achievements"."achievement_id" = "character_achievements"."achievement_id"
+                 WHERE "character_achievements"."character_id" = :characterId`,
+                {
+                  replacements: { characterId: character.characterId},
+                  type: Sequelize.QueryTypes.SELECT,
+                  model: Achievement,
+                  mapToModel: true,
+                  include: [CharacterAchievement],
+                }
+            );
+            character.achievements = newAchievements;
+
+            res.json(character);
+        }
+        else res.status(404).json({ error: 'Record not found' });
+    })
+    .catch (next);
 });
 
 export { router as characterRouter };
