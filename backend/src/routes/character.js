@@ -77,7 +77,7 @@ router.get('/sync/:id', checkRole(['sync_manager']), async (req, res) => {
     .catch(err => res.status(500).json({ error: err.message }));
 });
 
-router.get('/:id', async (req, res) => {
+router.get('/:id', async (req, res, next) => {
     let accountId = req.params.id;
     Character.findOne({
         where: {
@@ -85,7 +85,7 @@ router.get('/:id', async (req, res) => {
         }
     }).then(async character => {
         if (!character) {
-            return res.status(401).json({ message: 'character not found' });
+            return res.status(404).json({ error: 'Record not found' });
         }
         let weapon;
         if (character.dataValues.weaponId) {
@@ -160,8 +160,8 @@ router.get('/:id', async (req, res) => {
             }
         );
         achievements.forEach(item => {
-            if (item.points) {
-                points += item.points;
+            if (item.dataValues.points) {
+                points += item.dataValues.points;
             }
         });
 
@@ -179,8 +179,80 @@ router.get('/:id', async (req, res) => {
             points
         }
 
-        return res.status(200).json({ newCharacter });
-    });
+        return res.status(200).json( newCharacter );
+    })
+    .catch(next);
+});
+
+router.patch('/:id', checkRole(['client']), (req, res, next) => {
+    const {weapon, helmet, chestplate, leggings, boots, abilities, achievements} = req.body;
+    console.log(req.body);
+    Character.update({
+        weaponId: weapon ? weapon.weaponId: null,
+        helmetId: helmet? helmet.helmetId: null,
+        chestplateId: chestplate? chestplate.chestplateId : null,
+        leggingsId: leggings? leggings.leggingsId: null,
+        bootsId: boots? boots.bootsId: null
+    }, {
+      where: { character_id: req.params.id },
+      returning: true
+    })
+    .then(async ([ affectedCount, affectedRows ]) => {
+        if (affectedCount) {
+            let character = {
+                characterId: affectedRows[0].dataValues.characterId,
+                name: affectedRows[0].dataValues.name,
+                level: affectedRows[0].dataValues.level,
+                accountId: affectedRows[0].dataValues.accountId,
+                weapon,
+                helmet,
+                chestplate,
+                leggings,
+                boots,
+                achievements,
+            }
+            
+            await CharacterAbility.destroy({
+                where: { character_id: req.params.id },
+            });
+            await Promise.all(abilities.map(async item => {
+                return await CharacterAbility.create({
+                    characterId: character.characterId,
+                    abilityId: item.abilityId
+                })
+            }));
+
+            const newAbilities = await sequelize.query(
+                `SELECT "abilities"."ability_id", "abilities"."name", "abilities"."level_requirement", "abilities"."scales_with", "abilities"."effect"
+                 FROM "abilities"
+                 INNER JOIN "character_abilities" ON "abilities"."ability_id" = "character_abilities"."ability_id"
+                 WHERE "character_abilities"."character_id" = :characterId`,
+                {
+                  replacements: { characterId: character.characterId},
+                  type: Sequelize.QueryTypes.SELECT,
+                  model: Ability,
+                  mapToModel: true,
+                  include: [CharacterAbility],
+                }
+            );
+            let points = 0;
+
+            if (achievements) {
+                achievements.forEach(item => {
+                    if (item.points) {
+                        points += item.points;
+                    }
+                });
+            }
+
+            character.abilities = newAbilities;
+            character.points = points;
+
+            res.json(character);
+        }
+        else res.status(404).json({ error: 'Record not found' });
+    })
+    .catch (next);
 });
 
 router.patch('/sync/:id', checkRole(['sync_manager']), (req, res, next) => {
