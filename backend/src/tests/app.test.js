@@ -18,6 +18,7 @@ describe('POST /users/register', () => {
 
   afterEach(async () => {
     await User.destroy({ where: {} });
+    await Character.destroy({ where: { } });
   });
 
   it('creates a new user and returns 201', async () => {
@@ -75,6 +76,7 @@ describe('POST /users/login', () => {
 
     afterEach(async () => {
         await User.destroy({ where: { username: 'testuser' } });
+        await Character.destroy({ where: { } });
     });
 
     it('should return a JWT token when valid credentials are provided', async () => {
@@ -1717,6 +1719,168 @@ describe('GET /characters/sync/:id', () => {
     );
   });
 
+  it("returns 401 if the user doesn't have the necessary role", async () => {
+    const response = await request(app)
+      .get(`/characters/sync/${characterId}`)
+      .set('Authorization', `Bearer ${unauthorizedToken}`)
+      .expect(401);
+    expect(response.body.message).toBe(
+      'Not authorized'
+    );
+  });
+});
+
+describe('PATCH /characters/sync/:id', () => {
+  let validToken;
+  let invalidToken;
+  let unauthorizedToken;
+  let characterId;
+  let inexistingCharacterId = 'e36a7649-07da-479c-8acc-2c45f2047335';
+  let invalidCharacterId = 'sfertgeg';
+  let achievementId1;
+  let achievementId2;
+  let achievementId3;
+  beforeAll(async () => {
+    validToken = jwt.sign({
+      userId: '1',
+      username: 'admin@pop.com',
+      role: 'sync_manager',
+      name: 'Admin'
+    }, 'secret', {expiresIn: 60 * 300});
+    invalidToken = 'sdfsdf';
+    unauthorizedToken = jwt.sign({
+      userId: '1',
+      username: 'admin@pop.com',
+      role: 'client',
+      name: 'Admin'
+    }, 'secret', {expiresIn: 60 * 300});
+    await Achievement.sync({ force: true });
+    await CharacterAchievement.sync({ force: true });
+    await Character.sync({ force: true });
+
+    const character1 = await Character.create({
+      name: 'Test Character 1',
+      level: 5,
+      accountId: '0774fb22-ba8f-4f5d-b716-2699da5129f2'
+    });
+    characterId = character1.dataValues.characterId;
+    const character2 = await Character.create({
+      name: 'Test Character 2',
+      level: 15,
+      accountId: '0774fb22-ba8f-4f5d-b716-2699da5129f2'
+    });
+
+    const achievement1 = await Achievement.create({
+      name: 'Test Achievement 1',
+      points: 100,
+      requirements: 'Test Requirements 1',
+    });
+    achievementId1 = achievement1.dataValues.achievementId;
+    const achievement2 = await Achievement.create({
+      name: 'Test Achievement 2',
+      points: 50,
+      requirements: 'Test Requirements 2',
+    });
+    achievementId2 = achievement2.dataValues.achievementId;
+    const achievement3 = await Achievement.create({
+      name: 'Test Achievement 3',
+      points: 20,
+      requirements: 'Test Requirements 3',
+    });
+    achievementId3 = achievement3.dataValues.achievementId;
+
+    await CharacterAchievement.create({
+      characterId: character1.dataValues.characterId,
+      achievementId: achievement1.dataValues.achievementId
+    });
+
+  });
+
+  afterAll(async () => {
+    await Character.destroy({ where: {} });
+    await Achievement.destroy({ where: {} });
+    await CharacterAchievement.destroy({ where: {} });
+  });
+
+  it('updates old character and returns 200', async () => {
+    const newCharacterData = {
+      level: 20,
+      achievements: [
+        {
+          achievementId: achievementId2
+        },
+        {
+          achievementId: achievementId3
+        }
+      ]
+    };
+
+    const response = await request(app)
+      .patch(`/characters/sync/${characterId}`)
+      .send(newCharacterData)
+      .set('Authorization', `Bearer ${validToken}`)
+      .expect(200);
+      expect(response.body.name).toBe('Test Character 1');
+      expect(response.body.level).toBe(20);
+      expect(response.body.achievements).toHaveLength(2);
+      expect(response.body.achievements[0].name).toBe('Test Achievement 2');
+      expect(response.body.achievements[0].points).toBe(50);
+      expect(response.body.achievements[1].name).toBe('Test Achievement 3');
+      expect(response.body.achievements[1].points).toBe(20);
+  });
+    
+  it('returns 404 if the there is no character with the specified id', async () => {
+    const newCharacterData = {
+      level: 20,
+      achievements: [
+        {
+          achievementId: achievementId2
+        },
+        {
+          achievementId: achievementId3
+        }
+      ]
+    };
+
+    const response = await request(app)
+      .patch(`/characters/sync/${inexistingCharacterId}`)
+      .send(newCharacterData)
+      .set('Authorization', `Bearer ${validToken}`)
+      .expect(404);
+    expect(response.body.error).toBe('Record not found');
+  });
+    
+  it('returns 400 if the id is invalid', async () => {
+    const newCharacterData = {
+      level: 20,
+      achievements: [
+        {
+          achievementId: achievementId2
+        },
+        {
+          achievementId: achievementId3
+        }
+      ]
+    };
+
+    const response = await request(app)
+      .patch(`/characters/sync/${invalidCharacterId}`)
+      .send(newCharacterData)
+      .set('Authorization', `Bearer ${validToken}`)
+      .expect(400);
+    expect(response.body.message).toBe(`invalid input syntax for type uuid: \"${invalidCharacterId}\"`);
+  });
+
+  it('returns 401 if the token is invalid', async () => {
+    const response = await request(app)
+      .get(`/characters/sync/${characterId}`)
+      .set('Authorization', `Bearer ${invalidToken}`)
+      .expect(401);
+    expect(response.body.message).toBe(
+      'Token is not valid'
+    );
+  });
+  
   it("returns 401 if the user doesn't have the necessary role", async () => {
     const response = await request(app)
       .get(`/characters/sync/${characterId}`)
