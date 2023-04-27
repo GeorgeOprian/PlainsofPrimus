@@ -8,6 +8,11 @@ import { Armor } from '../models/armor.js';
 import { Weapon } from '../models/weapon.js';
 import { Character } from '../models/character.js';
 import { CharacterAchievement } from '../models/characterAchievement.js';
+import { CharacterAbility } from '../models/characterAbility.js';
+import { SequelizeService } from '../config/db.js';
+
+let sequelize = SequelizeService.getInstance();
+jest.setTimeout(20000);
 
 // User
 
@@ -98,7 +103,7 @@ describe('POST /users/login', () => {
             username: 'invalidusername',
             password: 'testpassword'
         })
-        .expect(401);
+        .expect(404);
         
         expect(response.body.message).toEqual('User not found');
     });
@@ -110,7 +115,7 @@ describe('POST /users/login', () => {
             username: 'testuser',
             password: 'incorrectpassword'
         })
-        .expect(401);
+        .expect(403);
         
         expect(response.body.message).toEqual('Incorrect password');
     });
@@ -1884,6 +1889,385 @@ describe('PATCH /characters/sync/:id', () => {
   it("returns 401 if the user doesn't have the necessary role", async () => {
     const response = await request(app)
       .get(`/characters/sync/${characterId}`)
+      .set('Authorization', `Bearer ${unauthorizedToken}`)
+      .expect(401);
+    expect(response.body.message).toBe(
+      'Not authorized'
+    );
+  });
+});
+
+describe('GET /characters/:id', () => {
+  let character;
+  let weapon;
+  let helmet;
+  let chestplate;
+  let leggings;
+  let boots;
+  let achievement1;
+  let achievement2;
+  let ability1;
+  let ability2;
+  let userId = 'aeb8bceb-c1d9-4cc8-96c3-6ebf4f283103'
+  let inexistingUserId = '71903946-f557-49e0-a4f8-9cad4720c440';
+  let invalidUserId = 'asdasd';
+
+  beforeAll(async () => {
+    // await User.sync({ force: true });
+    await Character.sync({ force: true });
+    await Armor.sync({ force: true });
+    await Weapon.sync({ force: true });
+    await Ability.sync({ force: true });
+    await Achievement.sync({ force: true });
+    await CharacterAbility.sync({ force: true });
+    await CharacterAchievement.sync({ force: true });
+
+    weapon = await Weapon.create({
+      name: 'Sword',
+    });
+
+    helmet = await Armor.create({
+      name: 'Helmet',
+    });
+    chestplate = await Armor.create({
+      name: 'Chestplate',
+    });
+    leggings = await Armor.create({
+      name: 'Leggings',
+    });
+    boots = await Armor.create({
+      name: 'Boots',
+    });
+
+    ability1 = await Ability.create({
+      name: 'Fire Ball',
+    });
+    ability2 = await Ability.create({
+      name: 'Freeze',
+    });
+
+    achievement1 = await Achievement.create({
+      name: 'First Kill',
+      points: 15
+    });
+    achievement2 = await Achievement.create({
+      name: 'Level Up',
+      points: 20
+    });
+
+    character = await Character.create({
+      name: 'John',
+      level: 10,
+      weaponId: weapon.dataValues.weaponId,
+      helmetId: helmet.dataValues.armorId,
+      chestplateId: chestplate.dataValues.armorId,
+      leggingsId: leggings.dataValues.armorId,
+      bootsId: boots.dataValues.armorId,
+      accountId: userId 
+    });
+
+    await CharacterAbility.create({ 
+      characterId: character.dataValues.characterId, 
+      abilityId: ability1.dataValues.abilityId
+    });
+    await CharacterAbility.create({ 
+      characterId: character.dataValues.characterId,
+      abilityId: ability2.dataValues.abilityId
+    });
+    await CharacterAchievement.create({ 
+      characterId: character.dataValues.characterId, 
+      achievementId: achievement1.dataValues.achievementId 
+    });
+    await CharacterAchievement.create({ 
+      characterId: character.dataValues.characterId, 
+      achievementId: achievement2.dataValues.achievementId 
+    });
+  });
+
+  afterAll(async () => {
+    await User.destroy({ where: {} });
+    await Character.destroy({ where: {} });
+    await Armor.destroy({ where: {} });
+    await Weapon.destroy({ where: {} });
+    await Ability.destroy({ where: {} });
+    await Achievement.destroy({ where: {} });
+    await CharacterAbility.destroy({ where: {} });
+    await CharacterAchievement.destroy({ where: {} });
+  });
+
+  it('responds with 200 and returns the character with the given ID', async () => {
+    const res = await request(app).get(`/characters/${userId}`);
+    expect(res.statusCode).toEqual(200);
+    expect(res.body.name).toBe('John');
+    expect(res.body.level).toBe(10);
+    expect(res.body.weapon.name).toBe('Sword');
+    expect(res.body.helmet.name).toBe('Helmet');
+    expect(res.body.chestplate.name).toBe('Chestplate');
+    expect(res.body.leggings.name).toBe('Leggings');
+    expect(res.body.boots.name).toBe('Boots');
+    expect(res.body.abilities).toHaveLength(2);
+    expect(res.body.abilities[0].name).toBe('Fire Ball');
+    expect(res.body.abilities[1].name).toBe('Freeze');
+    expect(res.body.achievements).toHaveLength(2);
+    expect(res.body.achievements[0].name).toBe('First Kill');
+    expect(res.body.achievements[1].name).toBe('Level Up');
+    expect(res.body.points).toEqual(35);
+  });
+
+  it('returns 404 if the there is no character with the specified id', async () => {
+    const response = await request(app)
+      .get(`/characters/${inexistingUserId}`)
+      .expect(404);
+    expect(response.body.error).toBe('Record not found');
+  });
+
+  it('returns 400 if the id is invalid', async () => {
+    const response = await request(app)
+      .get(`/characters/${invalidUserId}`)
+      .expect(400);
+    expect(response.body.message).toBe(`invalid input syntax for type uuid: \"${invalidUserId}\"`);
+  });
+});
+
+describe('PATCH /characters/:id', () => {
+  let validToken;
+  let invalidToken;
+  let unauthorizedToken;
+  let userId = 'aeb8bceb-c1d9-4cc8-96c3-6ebf4f283103'
+  let inexistingCharacterId = 'e36a7649-07da-479c-8acc-2c45f2047335';
+  let invalidCharacterId = 'sfertgeg';
+  let character;
+  let weapon1;
+  let helmet1;
+  let chestplate1;
+  let leggings1;
+  let boots1;
+  let achievement1;
+  let achievement2;
+  let ability1;
+  let ability2;
+  let ability3;
+  beforeAll(async () => {
+    unauthorizedToken = jwt.sign({
+      userId: '1',
+      username: 'admin@pop.com',
+      role: 'sync_manager',
+      name: 'Admin'
+    }, 'secret', {expiresIn: 60 * 300});
+    invalidToken = 'sdfsdf';
+    validToken = jwt.sign({
+      userId: '1',
+      username: 'admin@pop.com',
+      role: 'client',
+      name: 'Admin'
+    }, 'secret', {expiresIn: 60 * 300});
+    await Character.sync({ force: true });
+    await Armor.sync({ force: true });
+    await Weapon.sync({ force: true });
+    await Ability.sync({ force: true });
+    await Achievement.sync({ force: true });
+    await CharacterAbility.sync({ force: true });
+    await CharacterAchievement.sync({ force: true });
+
+    let weapon = await Weapon.create({
+      name: 'Sword',
+    });
+
+    let helmet = await Armor.create({
+      name: 'Helmet',
+    });
+    let chestplate = await Armor.create({
+      name: 'Chestplate',
+    });
+    let leggings = await Armor.create({
+      name: 'Leggings',
+    });
+    let boots = await Armor.create({
+      name: 'Boots',
+    });
+
+    weapon1 = await Weapon.create({
+      name: 'Sword1',
+    });
+
+    helmet1 = await Armor.create({
+      name: 'Helmet1',
+    });
+    chestplate1 = await Armor.create({
+      name: 'Chestplate1',
+    });
+    leggings1 = await Armor.create({
+      name: 'Leggings1',
+    });
+    boots1 = await Armor.create({
+      name: 'Boots1',
+    });
+
+    ability1 = await Ability.create({
+      name: 'Fire Ball',
+    });
+    ability2 = await Ability.create({
+      name: 'Freeze',
+    });
+    ability3 = await Ability.create({
+      name: 'Arcane Comet',
+    });
+
+    achievement1 = await Achievement.create({
+      name: 'First Kill',
+      points: 15
+    });
+    achievement2 = await Achievement.create({
+      name: 'Level Up',
+      points: 20
+    });
+
+    character = await Character.create({
+      name: 'John',
+      level: 10,
+      weaponId: weapon.dataValues.weaponId,
+      helmetId: helmet.dataValues.armorId,
+      chestplateId: chestplate.dataValues.armorId,
+      leggingsId: leggings.dataValues.armorId,
+      bootsId: boots.dataValues.armorId,
+      accountId: userId 
+    });
+
+    await CharacterAbility.create({ 
+      characterId: character.dataValues.characterId, 
+      abilityId: ability1.dataValues.abilityId
+    });
+    await CharacterAbility.create({ 
+      characterId: character.dataValues.characterId,
+      abilityId: ability2.dataValues.abilityId
+    });
+    await CharacterAchievement.create({ 
+      characterId: character.dataValues.characterId, 
+      achievementId: achievement1.dataValues.achievementId 
+    });
+    await CharacterAchievement.create({ 
+      characterId: character.dataValues.characterId, 
+      achievementId: achievement2.dataValues.achievementId 
+    });
+
+    
+
+  });
+
+  afterAll(async () => {
+    await User.destroy({ where: {} });
+    await Character.destroy({ where: {} });
+    await Armor.destroy({ where: {} });
+    await Weapon.destroy({ where: {} });
+    await Ability.destroy({ where: {} });
+    await Achievement.destroy({ where: {} });
+    await CharacterAbility.destroy({ where: {} });
+    await CharacterAchievement.destroy({ where: {} });
+  });
+
+  it('updates old character and returns 200', async () => {
+    const newCharacterData = {
+      weapon: weapon1.dataValues,
+      helmet: helmet1.dataValues,
+      chestplate: chestplate1.dataValues,
+      leggings: leggings1.dataValues,
+      boots: boots1.dataValues,
+      achievements: [achievement1.dataValues, achievement2.dataValues],
+      abilities: [ability2.dataValues, ability3.dataValues]
+    };
+
+    const response = await request(app)
+      .patch(`/characters/${character.dataValues.characterId}`)
+      .send(newCharacterData)
+      .set('Authorization', `Bearer ${validToken}`)
+      .expect(200);
+      expect(response.body.name).toBe('John');
+      expect(response.body.level).toBe(10);
+      expect(response.body.weapon.name).toBe('Sword1');
+      expect(response.body.helmet.name).toBe('Helmet1');
+      expect(response.body.chestplate.name).toBe('Chestplate1');
+      expect(response.body.leggings.name).toBe('Leggings1');
+      expect(response.body.boots.name).toBe('Boots1');
+      expect(response.body.abilities).toHaveLength(2);
+      expect(response.body.abilities[0].name).toBe('Freeze');
+      expect(response.body.abilities[1].name).toBe('Arcane Comet');
+      expect(response.body.achievements).toHaveLength(2);
+      expect(response.body.achievements[0].name).toBe('First Kill');
+      expect(response.body.achievements[1].name).toBe('Level Up');
+      expect(response.body.points).toBe(35);
+  });
+    
+  it('returns 404 if the there is no character with the specified id', async () => {
+    const newCharacterData = {
+      weapon: weapon1.dataValues,
+      helmet: helmet1.dataValues,
+      chestplate: chestplate1.dataValues,
+      leggings: leggings1.dataValues,
+      boots1: boots1.dataValues,
+      achievements: [achievement1.dataValues, achievement2.dataValues],
+      abilities: [ability2.dataValues, ability3.dataValues]
+    };
+
+    const response = await request(app)
+      .patch(`/characters/${inexistingCharacterId}`)
+      .send(newCharacterData)
+      .set('Authorization', `Bearer ${validToken}`)
+      .expect(404);
+    expect(response.body.error).toBe('Record not found');
+  });
+    
+  it('returns 400 if the id is invalid', async () => {
+    const newCharacterData = {
+      weapon: weapon1.dataValues,
+      helmet: helmet1.dataValues,
+      chestplate: chestplate1.dataValues,
+      leggings: leggings1.dataValues,
+      boots1: boots1.dataValues,
+      achievements: [achievement1.dataValues, achievement2.dataValues],
+      abilities: [ability2.dataValues, ability3.dataValues]
+    };
+
+    const response = await request(app)
+      .patch(`/characters/${invalidCharacterId}`)
+      .send(newCharacterData)
+      .set('Authorization', `Bearer ${validToken}`)
+      .expect(400);
+    expect(response.body.message).toBe(`invalid input syntax for type uuid: \"${invalidCharacterId}\"`);
+  });
+
+  it('returns 401 if the token is invalid', async () => {
+    const newCharacterData = {
+      weapon: weapon1.dataValues,
+      helmet: helmet1.dataValues,
+      chestplate: chestplate1.dataValues,
+      leggings: leggings1.dataValues,
+      boots1: boots1.dataValues,
+      achievements: [achievement1.dataValues, achievement2.dataValues],
+      abilities: [ability2.dataValues, ability3.dataValues]
+    };
+    const response = await request(app)
+      .patch(`/characters/${character.dataValues.characterId}`)
+      .send(newCharacterData)
+      .set('Authorization', `Bearer ${invalidToken}`)
+      .expect(401);
+    expect(response.body.message).toBe(
+      'Token is not valid'
+    );
+  });
+  
+  it("returns 401 if the user doesn't have the necessary role", async () => {
+    const newCharacterData = {
+      weapon: weapon1.dataValues,
+      helmet: helmet1.dataValues,
+      chestplate: chestplate1.dataValues,
+      leggings: leggings1.dataValues,
+      boots1: boots1.dataValues,
+      achievements: [achievement1.dataValues, achievement2.dataValues],
+      abilities: [ability2.dataValues, ability3.dataValues]
+    };
+    const response = await request(app)
+      .patch(`/characters/${character.dataValues.characterId}`)
+      .send(newCharacterData)
       .set('Authorization', `Bearer ${unauthorizedToken}`)
       .expect(401);
     expect(response.body.message).toBe(

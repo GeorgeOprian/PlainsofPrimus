@@ -31,10 +31,10 @@ router.post('/login', (req, res) => {
         }
     }).then(async user => {
         if (!user) {
-            return res.status(401).json({ message: 'User not found' });
+            return res.status(404).json({ message: 'User not found' });
         }
         if (!(await User.validPassword(password, user.dataValues.password))) {
-            return res.status(401).json({ message: 'Incorrect password' });
+            return res.status(403).json({ message: 'Incorrect password' });
         }
 
         const token = user.generateJWT();
