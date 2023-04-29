@@ -24,7 +24,8 @@ router.get('/sync', checkRole(['sync_manager']), async (req, res) => {
                 `SELECT "achievements"."achievement_id", "achievements"."name", "achievements"."points", "achievements"."requirements"
                  FROM "achievements"
                  INNER JOIN "character_achievements" ON "achievements"."achievement_id" = "character_achievements"."achievement_id"
-                 WHERE "character_achievements"."character_id" = :characterId`,
+                 WHERE "character_achievements"."character_id" = :characterId
+                 ORDER BY "achievements"."name"`,
                 {
                   replacements: { characterId: item.characterId},
                   type: Sequelize.QueryTypes.SELECT,
@@ -56,7 +57,8 @@ router.get('/sync/:id', checkRole(['sync_manager']), async (req, res) => {
                 `SELECT "achievements"."achievement_id", "achievements"."name", "achievements"."points", "achievements"."requirements"
                  FROM "achievements"
                  INNER JOIN "character_achievements" ON "achievements"."achievement_id" = "character_achievements"."achievement_id"
-                 WHERE "character_achievements"."character_id" = :characterId`,
+                 WHERE "character_achievements"."character_id" = :characterId
+                 ORDER BY "achievements"."name"`,
                 {
                   replacements: { characterId: item.characterId},
                   type: Sequelize.QueryTypes.SELECT,
@@ -135,7 +137,8 @@ router.get('/:id', async (req, res, next) => {
             `SELECT "abilities"."ability_id", "abilities"."name", "abilities"."level_requirement", "abilities"."scales_with", "abilities"."effect"
              FROM "abilities"
              INNER JOIN "character_abilities" ON "abilities"."ability_id" = "character_abilities"."ability_id"
-             WHERE "character_abilities"."character_id" = :characterId`,
+             WHERE "character_abilities"."character_id" = :characterId
+             ORDER BY "abilities"."name"`,
             {
               replacements: { characterId: character.dataValues.characterId},
               type: Sequelize.QueryTypes.SELECT,
@@ -150,7 +153,8 @@ router.get('/:id', async (req, res, next) => {
             `SELECT "achievements"."achievement_id", "achievements"."name", "achievements"."points", "achievements"."requirements"
              FROM "achievements"
              INNER JOIN "character_achievements" ON "achievements"."achievement_id" = "character_achievements"."achievement_id"
-             WHERE "character_achievements"."character_id" = :characterId`,
+             WHERE "character_achievements"."character_id" = :characterId
+             ORDER BY "achievements"."name"`,
             {
               replacements: { characterId: character.dataValues.characterId},
               type: Sequelize.QueryTypes.SELECT,
@@ -226,7 +230,8 @@ router.patch('/:id', checkRole(['client']), (req, res, next) => {
                 `SELECT "abilities"."ability_id", "abilities"."name", "abilities"."level_requirement", "abilities"."scales_with", "abilities"."effect"
                  FROM "abilities"
                  INNER JOIN "character_abilities" ON "abilities"."ability_id" = "character_abilities"."ability_id"
-                 WHERE "character_abilities"."character_id" = :characterId`,
+                 WHERE "character_abilities"."character_id" = :characterId
+                 ORDER BY "abilities"."name"`,
                 {
                   replacements: { characterId: character.characterId},
                   type: Sequelize.QueryTypes.SELECT,
@@ -283,7 +288,8 @@ router.patch('/sync/:id', checkRole(['sync_manager']), (req, res, next) => {
                 `SELECT "achievements"."achievement_id", "achievements"."name", "achievements"."points", "achievements"."requirements"
                  FROM "achievements"
                  INNER JOIN "character_achievements" ON "achievements"."achievement_id" = "character_achievements"."achievement_id"
-                 WHERE "character_achievements"."character_id" = :characterId`,
+                 WHERE "character_achievements"."character_id" = :characterId
+                 ORDER BY "achievements"."name"`,
                 {
                   replacements: { characterId: character.characterId},
                   type: Sequelize.QueryTypes.SELECT,

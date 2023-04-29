@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { Ability } from "../models/ability.js";
 import { checkRole } from "./middleware.js";
+import { Op } from 'sequelize';
 
 const router = Router();
 
@@ -21,6 +22,21 @@ router.get('/:id', async (req, res) => {
     })
     .then(record => {
         res.json(record)
+    })
+    .catch(err => res.status(500).json({ error: err.message }));
+});
+
+router.get('/level/:level', checkRole(['client']), async (req, res) => {
+    Ability.findAll({
+        where: { 
+            levelRequirement: {
+                [Op.lte]: req.params.level
+            }
+         },
+        raw:true
+    })
+    .then(records => {
+        res.json(records)
     })
     .catch(err => res.status(500).json({ error: err.message }));
 });

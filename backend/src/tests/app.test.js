@@ -13,7 +13,6 @@ import { SequelizeService } from '../config/db.js';
 
 let sequelize = SequelizeService.getInstance();
 jest.setTimeout(20000);
-
 // User
 
 describe('POST /users/register', () => {
@@ -120,6 +119,7 @@ describe('POST /users/login', () => {
         expect(response.body.message).toEqual('Incorrect password');
     });
 });
+
 
 
 // Achievement
@@ -509,6 +509,56 @@ describe('GET /abilities/:id', () => {
   });
 });
 
+describe('GET /abilities/level/:id', () => {
+  let validToken;
+  let invalidToken;
+  let unauthorizedToken;
+  beforeAll(async () => {
+    validToken = jwt.sign({
+      userId: '1',
+      username: 'admin@pop.com',
+      role: 'client',
+      name: 'Admin'
+    }, 'secret', {expiresIn: 60 * 300});
+    invalidToken = 'sdfsdf';
+    unauthorizedToken = jwt.sign({
+      userId: '1',
+      username: 'admin@pop.com',
+      role: 'admin',
+      name: 'Admin'
+    }, 'secret', {expiresIn: 60 * 300});
+    await Ability.sync({ force: true });
+
+    let ability1 = await Ability.create({
+      name: 'Test Ability 1',
+      levelRequirement: 15
+    });
+    let ability2 = await Ability.create({
+      name: 'Test Ability 2',
+      levelRequirement: 20
+    });
+    let ability3 = await Ability.create({
+      name: 'Test Ability 3',
+      levelRequirement: 25
+    });
+  });
+
+  afterEach(async () => {
+    await Ability.destroy({ where: {} });
+  });
+
+  it('should return abilities', async () => {
+
+    const response = await request(app)
+      .get('/abilities/level/20')
+      .set('Authorization', `Bearer ${validToken}`)
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveLength(2);
+    expect(response.body[0].name).toBe('Test Ability 1');
+    expect(response.body[1].name).toBe('Test Ability 2');
+  });
+});
+
 describe('POST /abilities', () => {
   let validToken;
   let invalidToken;
@@ -853,6 +903,77 @@ describe('GET /armors/:id', () => {
     expect(response.body[0].name).toBe('Test Armor 1');
     expect(response.body[0].type).toBe('chestplate');
     expect(response.body[0].armor).toBe(10);
+  });
+});
+
+describe('GET /armors/achievements', () => {
+  let validToken;
+  let invalidToken;
+  let unauthorizedToken;
+  let achievements;
+  beforeAll(async () => {
+    validToken = jwt.sign({
+      userId: '1',
+      username: 'admin@pop.com',
+      role: 'client',
+      name: 'Admin'
+    }, 'secret', {expiresIn: 60 * 300});
+    invalidToken = 'sdfsdf';
+    unauthorizedToken = jwt.sign({
+      userId: '1',
+      username: 'admin@pop.com',
+      role: 'admin',
+      name: 'Admin'
+    }, 'secret', {expiresIn: 60 * 300});
+    await Armor.sync({ force: true });
+    await Achievement.sync({ force: true });
+    let achievement1 = await Achievement.create({
+      name: 'Test Achievement 1',
+      points: 15
+    });
+    let achievement2 = await Achievement.create({
+      name: 'Test Achievement 2',
+      points: 20
+    });
+    let achievement3 = await Achievement.create({
+      name: 'Test Achievement 3',
+      points: 25
+    });
+    achievements = [achievement1, achievement2];
+    let armor1 = await Armor.create({
+      name: 'Test Armor 1',
+      achievementId: achievement1.dataValues.achievementId
+    });
+    let armor2 = await Armor.create({
+      name: 'Test Armor 2',
+      achievementId: achievement1.dataValues.achievementId
+    });
+    let armor3 = await Armor.create({
+      name: 'Test Armor 3',
+      achievementId: achievement2.dataValues.achievementId
+    });
+    let armor4 = await Armor.create({
+      name: 'Test Armor 4',
+      achievementId: achievement3.dataValues.achievementId
+    });
+  });
+
+  afterEach(async () => {
+    await Armor.destroy({ where: {} });
+    await Achievement.destroy({ where: {} });
+  });
+
+  it('should return armors', async () => {
+
+    const response = await request(app)
+      .get('/armors/achievements')
+      .send(achievements)
+      .set('Authorization', `Bearer ${validToken}`)
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveLength(3);
+    expect(response.body[0].name).toBe('Test Armor 1');
+    expect(response.body[1].name).toBe('Test Armor 2');
+    expect(response.body[2].name).toBe('Test Armor 3');
   });
 });
 
@@ -1224,6 +1345,77 @@ describe('GET /weapons/:id', () => {
     expect(response.body[0].name).toBe('Test Weapon 1');
     expect(response.body[0].attackDamage).toBe(20);
     expect(response.body[0].specialBonus).toBe('Test bonus 1');
+  });
+});
+
+describe('GET /weapons/achievements', () => {
+  let validToken;
+  let invalidToken;
+  let unauthorizedToken;
+  let achievements;
+  beforeAll(async () => {
+    validToken = jwt.sign({
+      userId: '1',
+      username: 'admin@pop.com',
+      role: 'client',
+      name: 'Admin'
+    }, 'secret', {expiresIn: 60 * 300});
+    invalidToken = 'sdfsdf';
+    unauthorizedToken = jwt.sign({
+      userId: '1',
+      username: 'admin@pop.com',
+      role: 'admin',
+      name: 'Admin'
+    }, 'secret', {expiresIn: 60 * 300});
+    await Weapon.sync({ force: true });
+    await Achievement.sync({ force: true });
+    let achievement1 = await Achievement.create({
+      name: 'Test Achievement 1',
+      points: 15
+    });
+    let achievement2 = await Achievement.create({
+      name: 'Test Achievement 2',
+      points: 20
+    });
+    let achievement3 = await Achievement.create({
+      name: 'Test Achievement 3',
+      points: 25
+    });
+    achievements = [achievement1, achievement2];
+    let weapon1 = await Weapon.create({
+      name: 'Test Weapon 1',
+      achievementId: achievement1.dataValues.achievementId
+    });
+    let weapon2 = await Weapon.create({
+      name: 'Test Weapon 2',
+      achievementId: achievement1.dataValues.achievementId
+    });
+    let weapon3 = await Weapon.create({
+      name: 'Test Weapon 3',
+      achievementId: achievement2.dataValues.achievementId
+    });
+    let weapon4 = await Weapon.create({
+      name: 'Test Weapon 4',
+      achievementId: achievement3.dataValues.achievementId
+    });
+  });
+
+  afterEach(async () => {
+    await Weapon.destroy({ where: {} });
+    await Achievement.destroy({ where: {} });
+  });
+
+  it('should return weapons', async () => {
+
+    const response = await request(app)
+      .get('/weapons/achievements')
+      .send(achievements)
+      .set('Authorization', `Bearer ${validToken}`)
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveLength(3);
+    expect(response.body[0].name).toBe('Test Weapon 1');
+    expect(response.body[1].name).toBe('Test Weapon 2');
+    expect(response.body[2].name).toBe('Test Weapon 3');
   });
 });
 
@@ -1940,18 +2132,18 @@ describe('GET /characters/:id', () => {
     });
 
     ability1 = await Ability.create({
-      name: 'Fire Ball',
+      name: 'Test Ability 1',
     });
     ability2 = await Ability.create({
-      name: 'Freeze',
+      name: 'Test Ability 2',
     });
 
     achievement1 = await Achievement.create({
-      name: 'First Kill',
+      name: 'Test Achievement 1',
       points: 15
     });
     achievement2 = await Achievement.create({
-      name: 'Level Up',
+      name: 'Test Achievement 2',
       points: 20
     });
 
@@ -2006,11 +2198,11 @@ describe('GET /characters/:id', () => {
     expect(res.body.leggings.name).toBe('Leggings');
     expect(res.body.boots.name).toBe('Boots');
     expect(res.body.abilities).toHaveLength(2);
-    expect(res.body.abilities[0].name).toBe('Fire Ball');
-    expect(res.body.abilities[1].name).toBe('Freeze');
+    expect(res.body.abilities[0].name).toBe('Test Ability 1');
+    expect(res.body.abilities[1].name).toBe('Test Ability 2');
     expect(res.body.achievements).toHaveLength(2);
-    expect(res.body.achievements[0].name).toBe('First Kill');
-    expect(res.body.achievements[1].name).toBe('Level Up');
+    expect(res.body.achievements[0].name).toBe('Test Achievement 1');
+    expect(res.body.achievements[1].name).toBe('Test Achievement 2');
     expect(res.body.points).toEqual(35);
   });
 
@@ -2104,21 +2296,21 @@ describe('PATCH /characters/:id', () => {
     });
 
     ability1 = await Ability.create({
-      name: 'Fire Ball',
+      name: 'Test Ability 1',
     });
     ability2 = await Ability.create({
-      name: 'Freeze',
+      name: 'Test Ability 2',
     });
     ability3 = await Ability.create({
-      name: 'Arcane Comet',
+      name: 'Test Ability 3',
     });
 
     achievement1 = await Achievement.create({
-      name: 'First Kill',
+      name: 'Test Achievement 1',
       points: 15
     });
     achievement2 = await Achievement.create({
-      name: 'Level Up',
+      name: 'Test Achievement 2',
       points: 20
     });
 
@@ -2189,11 +2381,11 @@ describe('PATCH /characters/:id', () => {
       expect(response.body.leggings.name).toBe('Leggings1');
       expect(response.body.boots.name).toBe('Boots1');
       expect(response.body.abilities).toHaveLength(2);
-      expect(response.body.abilities[0].name).toBe('Freeze');
-      expect(response.body.abilities[1].name).toBe('Arcane Comet');
+      expect(response.body.abilities[0].name).toBe('Test Ability 2');
+      expect(response.body.abilities[1].name).toBe('Test Ability 3');
       expect(response.body.achievements).toHaveLength(2);
-      expect(response.body.achievements[0].name).toBe('First Kill');
-      expect(response.body.achievements[1].name).toBe('Level Up');
+      expect(response.body.achievements[0].name).toBe('Test Achievement 1');
+      expect(response.body.achievements[1].name).toBe('Test Achievement 2');
       expect(response.body.points).toBe(35);
   });
     
