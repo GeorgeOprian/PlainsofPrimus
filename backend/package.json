@@ -1,7 +1,7 @@
 {
     "scripts": {
         "start": "nodemon src/app.js",
-        "test": "jest"
+        "test": "jest --coverage"
     },
     "type": "module",
     "dependencies": {

@@ -5,7 +5,7 @@ import { handleError } from './routes/middleware.js';
 import { characterRouter } from './routes/character.js';
 import { achievementRouter } from './routes/achievement.js';
 import { abilityRouter } from './routes/ability.js';
-import dataLoader from './bootstrap/dataLoader.js';
+// import dataLoader from './bootstrap/dataLoader.js';
 import { armorRouter } from './routes/armor.js';
 import { weaponRouter } from './routes/weapon.js';
 

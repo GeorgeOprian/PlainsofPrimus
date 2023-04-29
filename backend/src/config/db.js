@@ -12,6 +12,7 @@ export class SequelizeService {
                 {
                     host: "dpg-ch2irhd269v61fdi38h0-a.frankfurt-postgres.render.com",
                     port: 5432,
+                    logging: false,
                     dialect: 'postgres',
                     dialectOptions: {
                         ssl: {
