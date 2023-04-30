@@ -229,6 +229,7 @@ const WeaponPanel = observer(({
                     </FormGroup>
 
             }
+            
             <Snackbar
                 anchorOrigin={{
                     horizontal: 'right',
