@@ -3,13 +3,22 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
+import { BrowserRouter, Link } from 'react-router-dom';
+import Panel from './components/panel/panel';
+import AlertDialog from './components/dialog/dialog';
+import Navigation from './components/navigation/navigation.component';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );
 root.render(
   <React.StrictMode>
-    <App />
+    <BrowserRouter>
+      <Navigation />
+      <App />
+      <Panel />
+      <AlertDialog />
+    </BrowserRouter>
   </React.StrictMode>
 );
 

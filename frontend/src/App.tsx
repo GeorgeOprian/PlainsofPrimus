@@ -1,26 +1,27 @@
 import React from 'react';
 import logo from './logo.svg';
 import './App.css';
+import { observer } from 'mobx-react-lite';
+import { Route, Routes } from 'react-router-dom';
+import HomePage from './pages/home/home.page';
+import RegisterPage from './pages/register/register.page';
+import LoginPage from './pages/login/login.page';
 
-function App() {
+const App = observer(() => {
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        {/* <Route path="/apartments" element={<ApartmentsPage />} />
+        <Route path="/addresses" element={<AdressesPage />} />
+        <Route path="/agents" element={<AgentsPage />} />
+        <Route path="/clients" element={<ClientsPage />} />
+        <Route path="/contracts" element={<RentPage />} />
+        <Route path="/payrent" element={<PayRentPage />} /> */}
+      </Routes>
   );
-}
+})
 
 export default App;
