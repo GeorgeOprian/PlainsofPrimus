@@ -6,6 +6,8 @@ import { Route, Routes } from 'react-router-dom';
 import HomePage from './pages/home/home.page';
 import RegisterPage from './pages/register/register.page';
 import LoginPage from './pages/login/login.page';
+import WeaponsPage from './pages/weapons/weapons.page';
+import AchievementsPage from './pages/achievements/achievements.page';
 
 const App = observer(() => {
 
@@ -14,6 +16,8 @@ const App = observer(() => {
         <Route path="/" element={<HomePage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/weapons" element={<WeaponsPage />} />
+        <Route path="/achievements" element={<AchievementsPage />} />
         {/* <Route path="/apartments" element={<ApartmentsPage />} />
         <Route path="/addresses" element={<AdressesPage />} />
         <Route path="/agents" element={<AgentsPage />} />
