@@ -186,7 +186,7 @@ router.get('/:id', async (req, res, next) => {
         return res.status(200).json( newCharacter );
     })
     .catch(next);
-});
+}); //client userId
 
 router.patch('/:id', checkRole(['client']), (req, res, next) => {
     const {weapon, helmet, chestplate, leggings, boots, abilities, achievements} = req.body;

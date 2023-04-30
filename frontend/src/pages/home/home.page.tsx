@@ -13,10 +13,11 @@ const HomePage = () => {
             style={{
                 height: "85vh",
                 width: "100vw",
-                backgroundColor: "rgb(245, 237, 228)",
+                backgroundColor: "#585b87",
                 display: "flex",
                 flexDirection: "column",
-                justifyContent: "center"
+                justifyContent: "center",
+                color: "white"
             }}
         >
             <div
