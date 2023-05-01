@@ -8,6 +8,8 @@ import RegisterPage from './pages/register/register.page';
 import LoginPage from './pages/login/login.page';
 import WeaponsPage from './pages/weapons/weapons.page';
 import AchievementsPage from './pages/achievements/achievements.page';
+import ArmorPage from './pages/armor/armor.page';
+import AbilityPage from './pages/ability/ability.page';
 
 const App = observer(() => {
 
@@ -18,6 +20,8 @@ const App = observer(() => {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/weapons" element={<WeaponsPage />} />
         <Route path="/achievements" element={<AchievementsPage />} />
+        <Route path="/armors" element={<ArmorPage />} />
+        <Route path="/abilities" element={<AbilityPage />} />
         {/* <Route path="/apartments" element={<ApartmentsPage />} />
         <Route path="/addresses" element={<AdressesPage />} />
         <Route path="/agents" element={<AgentsPage />} />

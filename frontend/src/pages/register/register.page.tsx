@@ -106,7 +106,7 @@ const RegisterPage = observer(() => {
             style={{
                 height: "85vh",
                 width: "100vw",
-                backgroundColor: "rgb(245, 237, 228)",
+                backgroundColor: "#585b87",
                 paddingRight:"30rem",
                 paddingLeft:"30rem",
                 boxSizing: "border-box"

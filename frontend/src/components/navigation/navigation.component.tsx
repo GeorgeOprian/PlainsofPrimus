@@ -43,9 +43,11 @@ const Navigation = () => {
                         flexGrow: 1
                     }}
                 >
-                    <Link style={{...linkStyle}} to="/">Acasa</Link>
+                    <Link style={{...linkStyle}} to="/">Home</Link>
                     <Link style={{...linkStyle}} to="/weapons">Weapons</Link>
                     <Link style={{...linkStyle}} to="/achievements">Achievements</Link>
+                    <Link style={{...linkStyle}} to="/armors">Armors</Link>
+                    <Link style={{...linkStyle}} to="/abilities">Abilities</Link>
                 </div>
                 {
                     token ?
@@ -53,7 +55,9 @@ const Navigation = () => {
                             style={{
                                 display: "flex",
                                 alignItems: "center",
-                                marginTop: "0.25rem"
+                                marginTop: "0.25rem",
+                                marginLeft: "0.5rem",
+                                borderLeft: "1px solid white"
                             }}
                         >
                             <Button
