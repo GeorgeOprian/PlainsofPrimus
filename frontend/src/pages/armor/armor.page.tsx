@@ -3,21 +3,20 @@ import TableComponent from "../../components/table/table.component";
 import { useContext, useEffect, useMemo, useState } from "react";
 import { MenuActionItemsType, TableHeaderTypes } from "../../components/table/table.component.types";
 import { TableRowsTypes } from "../../components/table/table.component.types";
-import { deleteWeaponDB, getWeapons } from "./weapons.page.requests";
 import { DialogContext, PanelContext, ToastContext } from "../../mobx/store";
-import WeaponPanel from "./components/weapon-panel/weapons.panel";
 import useLocalStorage from "react-use-localstorage";
 import { Snackbar } from "@mui/material";
+import { deleteArmorDB, getArmors } from "./armor.page.requests";
+import ArmorPanel from "./components/armor-panel/armor.panel";
 
-const WeaponsPage = observer(() => {
+const ArmorPage = observer(() => {
 
-    const [weapons, setWeapons] = useState<any[]>()
-    const [achievements, setAchievements] = useState<any[]>()
+    const [armors, setArmors] = useState<any[]>()
     const [loading, setLoading] = useState<boolean>(true);
     const panelState = useContext(PanelContext);
     const toastState = useContext(ToastContext);
     const dialogState = useContext(DialogContext);
-    const [currentWeapon, setCurrentWeapon] = useState()
+    const [currentArmor, setCurrentArmor] = useState()
     const [token, setToken] = useLocalStorage('userToken', '');
     const [role, setRole] = useLocalStorage('userRole', '');
 
@@ -31,12 +30,12 @@ const WeaponsPage = observer(() => {
         []
     )
 
-    const tableHeadersAchievements: TableHeaderTypes[] = useMemo(
+    const tableHeadersArmour: TableHeaderTypes[] = useMemo(
         () => {
             return [
                 {
                     style: styleHeader,
-                    value: "Achievement ID"
+                    value: "Armor ID"
                 },
                 {
                     style: styleHeader,
@@ -44,41 +43,36 @@ const WeaponsPage = observer(() => {
                 },
                 {
                     style: styleHeader,
-                    value: "Point"
+                    value: "Image"
                 },
                 {
                     style: styleHeader,
-                    value: "Requirements"
+                    value: "Type"
+                },
+                {
+                    style: styleHeader,
+                    value: "Armor"
+                },
+                {
+                    style: styleHeader,
+                    value: "Health"
+                },
+                {
+                    style: styleHeader,
+                    value: "Strength"
+                },
+                {
+                    style: styleHeader,
+                    value: "Intellect"
+                },
+                {
+                    style: styleHeader,
+                    value: "Agility"
+                },
+                {
+                    style: styleHeader,
+                    value: "Achievement ID"
                 }
-            ]
-        },
-        [styleHeader]
-    )
-
-    const tableHeadersWeapons: TableHeaderTypes[] = useMemo(
-        () => {
-            return [
-                {
-                    style: styleHeader,
-                    value: "Weapon ID"
-                },
-                {
-                    style: styleHeader,
-                    value: "Name"
-                },
-                {
-                    style: styleHeader,
-                    value: "Attack damage"
-                },
-                {
-                    style: styleHeader,
-                    value: "Special bonus"
-                },
-                
-                {
-                    style: styleHeader,
-                    value: "Achievement ID"
-                },
             ]
         },
         [styleHeader]
@@ -90,7 +84,7 @@ const WeaponsPage = observer(() => {
                 {
                     action: () => {
                         panelState.setOpenPanel({
-                            body: (<WeaponPanel editWeapon={currentWeapon} />)
+                            body: (<ArmorPanel editArmor={currentArmor} />)
                         });
                     },
                     actionTitle: "Edit"
@@ -99,7 +93,7 @@ const WeaponsPage = observer(() => {
                     action: () => {
                         dialogState.setDialog({
                             open: true,
-                            dialogTitle: "You delete the weapon...",
+                            dialogTitle: "You delete the armor...",
                             dialogContent: "Are you sure?",
                             actionOne: () => {
                                 dialogState.setDialog(undefined);
@@ -107,10 +101,10 @@ const WeaponsPage = observer(() => {
                             textButtonOne: "Cancel",
                             actionTwo: async () => {
                                 try {
-                                    await deleteWeaponDB((currentWeapon as any).weaponId, token);
+                                    await deleteArmorDB((currentArmor as any).armorId, token);
                                     dialogState.setDialog(undefined);
                                     panelState.setRefreshData({
-                                        refreshWeapons: true
+                                        refreshArmors: true
                                     });
                                     toastState.setToast({
                                         open: true,
@@ -131,28 +125,27 @@ const WeaponsPage = observer(() => {
                 }
             ]
         },
-        [currentWeapon, token]
+        [currentArmor, token]
     )
 
     useEffect(
         () => {
             setLoading(() => true)
-            getWeapons()
-            .then(data => setWeapons(() => data))
+            getArmors()
+            .then(data => setArmors(() => data))
             .catch(e => console.log(e))
             .finally(() => setLoading(() => false))
         },
         []
     )
-
     useEffect(
         () => {
-            if(!panelState.refreshData?.refreshWeapons) return;
+            if(!panelState.refreshData?.refreshArmors) return;
 
             setLoading(() => true)
-            getWeapons()
+            getArmors()
             .then(data => {
-                setWeapons(() => data)
+                setArmors(() => data)
                 panelState.setRefreshData(undefined);
             })
             .catch(e => console.log(e))
@@ -161,49 +154,26 @@ const WeaponsPage = observer(() => {
         [panelState.refreshData]
     )
 
-    const rowsAchievements: TableHeaderTypes[] = useMemo(
+    const rowsArmours: TableRowsTypes[] = useMemo(
         () => {
-            if(!achievements) return []
+            if(!armors) return []
 
-            return achievements.map(achievement => {
+            return armors.map(armor => {
                 return {
-                    value: {
-                        achievementId: achievement.achievementId,
-                        name: achievement.name,
-                        points: achievement.points,
-                        requirements: achievement.requirements
-                    }
+                    value: armor
                 }
             })
         },
-        [achievements]
-    )
-
-    const rowsWeapons: TableRowsTypes[] = useMemo(
-        () => {
-            if(!weapons) return []
-
-            return weapons.map(weapon => {
-                return {
-                    value: {
-                        weaponId: weapon.weaponId,
-                        name: weapon.name,
-                        attackDamage: weapon.attackDamage,
-                        specialBonus: weapon.specialBonus,
-                        achievementId: weapon.achievementId
-                    }
-                }
-            })
-        },
-        [weapons]
+        [armors]
     )
 
     const createPanel = () => {
 
         panelState.setOpenPanel({
-            body: (<WeaponPanel />)
+            body: (<ArmorPanel />)
         });
     }
+
 
     return (
         <div
@@ -218,12 +188,12 @@ const WeaponsPage = observer(() => {
         >
             <TableComponent
                 tableHeaders={{
-                    items: tableHeadersWeapons,
+                    items: tableHeadersArmour,
                     style: {
                         backgroundColor: "black",
                     }
                 }}
-                rows={rowsWeapons}
+                rows={rowsArmours}
                 menuActionItems={ role === "admin" ? {
                     actions: menuActionItems,
                     title: {
@@ -232,11 +202,11 @@ const WeaponsPage = observer(() => {
                         style: styleHeader
                     }
                 } : undefined}
-                rowDetails={(value) => setCurrentWeapon(() => value)}
+                rowDetails={(value) => setCurrentArmor(() => value)}
                 loading={loading}
-                headerButtonTitle="Create weapon"
+                headerButtonTitle="Create armor"
                 headerButton={role === "admin" ? createPanel : undefined}
-                title="Weapons"
+                title="Armors"
             />
             <Snackbar
                 anchorOrigin={{
@@ -252,4 +222,4 @@ const WeaponsPage = observer(() => {
     )
 })
 
-export default WeaponsPage;
+export default ArmorPage;

@@ -7,6 +7,7 @@ import { ToastContext } from "../../mobx/store";
 import { loginUser } from "./login.page.requests";
 import useLocalStorage from "react-use-localstorage";
 import { useNavigate } from "react-router-dom";
+import jwt_decode from "jwt-decode";
 
 type LoginFields = {
     username: ValidationTypes,
@@ -22,6 +23,7 @@ type ValidationTypes = {
 const LoginPage = observer(() => {
 
     const [token, setToken] = useLocalStorage('userToken', '');
+    const [role, setRole] = useLocalStorage('userRole', '');
     const navigate = useNavigate()
 
     
@@ -80,6 +82,8 @@ const LoginPage = observer(() => {
 
             if(isUserLogged.token) {
                 setToken(isUserLogged.token);
+                let decode: any = jwt_decode(isUserLogged.token)
+                setRole(decode.role)
                 navigate("/");
                 toastState.setToast({
                     open: true,
@@ -106,7 +110,7 @@ const LoginPage = observer(() => {
             style={{
                 height: "85vh",
                 width: "100vw",
-                backgroundColor: "rgb(245, 237, 228)",
+                backgroundColor: "#585b87",
                 paddingRight:"30rem",
                 paddingLeft:"30rem",
                 boxSizing: "border-box"

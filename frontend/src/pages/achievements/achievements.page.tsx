@@ -18,6 +18,7 @@ const AchievementsPage = observer(() => {
     const dialogState = useContext(DialogContext);
     const [currentAchievement, setCurrentAchievement] = useState()
     const [token, setToken] = useLocalStorage('userToken', '');
+    const [role, setRole] = useLocalStorage('userRole', '');
 
     const styleHeader = useMemo(
         () => {
@@ -180,18 +181,18 @@ const AchievementsPage = observer(() => {
                     }
                 }}
                 rows={rowsAchievements}
-                menuActionItems={{
+                menuActionItems={role === "admin" ?{
                     actions: menuActionItems,
                     title: {
                         value: "Actions",
                         align: "right",
                         style: styleHeader
                     }
-                }}
+                } : undefined}
                 rowDetails={(value) => setCurrentAchievement(() => value)}
                 loading={loading}
                 headerButtonTitle="Create achievement"
-                headerButton={createPanel}
+                headerButton={role === "admin" ? createPanel : undefined}
                 title="Achievements"
             />
             <Snackbar

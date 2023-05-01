@@ -48,10 +48,3 @@ export const deleteWeaponDB = async (id: number, token: any) => {
 
     return data;
 }
-
-export const getAchievements = async () => {
-    
-    let { data } = await axios.get(`${process.env.REACT_APP_API_URL}/weapons/achievements`)
-
-    return data;
-}

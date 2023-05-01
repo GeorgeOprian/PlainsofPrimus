@@ -1,23 +1,21 @@
 import { observer } from "mobx-react-lite";
 import TableComponent from "../../components/table/table.component";
-import { useContext, useEffect, useMemo, useState } from "react";
-import { MenuActionItemsType, TableHeaderTypes } from "../../components/table/table.component.types";
-import { TableRowsTypes } from "../../components/table/table.component.types";
-import { deleteWeaponDB, getWeapons } from "./weapons.page.requests";
-import { DialogContext, PanelContext, ToastContext } from "../../mobx/store";
-import WeaponPanel from "./components/weapon-panel/weapons.panel";
-import useLocalStorage from "react-use-localstorage";
 import { Snackbar } from "@mui/material";
+import { useContext, useEffect, useMemo, useState } from "react";
+import { DialogContext, PanelContext, ToastContext } from "../../mobx/store";
+import useLocalStorage from "react-use-localstorage";
+import { MenuActionItemsType, TableHeaderTypes } from "../../components/table/table.component.types";
+import { deleteAbilityDB, getAbilities } from "./ability.page.requests";
+import AbilityPanel from "./components/ability-panel/ability.panel";
 
-const WeaponsPage = observer(() => {
+const AbilityPage = observer(() => {
 
-    const [weapons, setWeapons] = useState<any[]>()
-    const [achievements, setAchievements] = useState<any[]>()
+    const [abilities, setAbilities] = useState<any[]>()
     const [loading, setLoading] = useState<boolean>(true);
     const panelState = useContext(PanelContext);
     const toastState = useContext(ToastContext);
     const dialogState = useContext(DialogContext);
-    const [currentWeapon, setCurrentWeapon] = useState()
+    const [currentAbility, setCurrentAbility] = useState()
     const [token, setToken] = useLocalStorage('userToken', '');
     const [role, setRole] = useLocalStorage('userRole', '');
 
@@ -31,12 +29,12 @@ const WeaponsPage = observer(() => {
         []
     )
 
-    const tableHeadersAchievements: TableHeaderTypes[] = useMemo(
+    const tableHeadersAbilities: TableHeaderTypes[] = useMemo(
         () => {
             return [
                 {
                     style: styleHeader,
-                    value: "Achievement ID"
+                    value: "Ability ID"
                 },
                 {
                     style: styleHeader,
@@ -44,41 +42,16 @@ const WeaponsPage = observer(() => {
                 },
                 {
                     style: styleHeader,
-                    value: "Point"
+                    value: "Level Requirement"
                 },
                 {
                     style: styleHeader,
-                    value: "Requirements"
+                    value: "Scales with"
+                },
+                {
+                    style: styleHeader,
+                    value: "Effect"
                 }
-            ]
-        },
-        [styleHeader]
-    )
-
-    const tableHeadersWeapons: TableHeaderTypes[] = useMemo(
-        () => {
-            return [
-                {
-                    style: styleHeader,
-                    value: "Weapon ID"
-                },
-                {
-                    style: styleHeader,
-                    value: "Name"
-                },
-                {
-                    style: styleHeader,
-                    value: "Attack damage"
-                },
-                {
-                    style: styleHeader,
-                    value: "Special bonus"
-                },
-                
-                {
-                    style: styleHeader,
-                    value: "Achievement ID"
-                },
             ]
         },
         [styleHeader]
@@ -90,7 +63,7 @@ const WeaponsPage = observer(() => {
                 {
                     action: () => {
                         panelState.setOpenPanel({
-                            body: (<WeaponPanel editWeapon={currentWeapon} />)
+                            body: (<AbilityPanel editAbility={currentAbility} />)
                         });
                     },
                     actionTitle: "Edit"
@@ -99,7 +72,7 @@ const WeaponsPage = observer(() => {
                     action: () => {
                         dialogState.setDialog({
                             open: true,
-                            dialogTitle: "You delete the weapon...",
+                            dialogTitle: "You delete the ability...",
                             dialogContent: "Are you sure?",
                             actionOne: () => {
                                 dialogState.setDialog(undefined);
@@ -107,10 +80,10 @@ const WeaponsPage = observer(() => {
                             textButtonOne: "Cancel",
                             actionTwo: async () => {
                                 try {
-                                    await deleteWeaponDB((currentWeapon as any).weaponId, token);
+                                    await deleteAbilityDB((currentAbility as any).abilityId, token);
                                     dialogState.setDialog(undefined);
                                     panelState.setRefreshData({
-                                        refreshWeapons: true
+                                        refreshAbilities: true
                                     });
                                     toastState.setToast({
                                         open: true,
@@ -131,15 +104,31 @@ const WeaponsPage = observer(() => {
                 }
             ]
         },
-        [currentWeapon, token]
+        [currentAbility, token]
     )
+
+    const rowsAbilities: TableHeaderTypes[] = useMemo(
+        () => {
+            if(!abilities) return []
+
+            return abilities.map(abilitie => {
+                return {
+                    value: abilitie
+                }
+            })
+        },
+        [abilities]
+    )
+
 
     useEffect(
         () => {
             setLoading(() => true)
-            getWeapons()
-            .then(data => setWeapons(() => data))
-            .catch(e => console.log(e))
+            getAbilities()
+            .then(
+                data => setAbilities(() => data)
+            )
+            .catch((e) => console.log(e))
             .finally(() => setLoading(() => false))
         },
         []
@@ -147,62 +136,28 @@ const WeaponsPage = observer(() => {
 
     useEffect(
         () => {
-            if(!panelState.refreshData?.refreshWeapons) return;
+            if(!panelState.refreshData?.refreshAbilities) return;
 
             setLoading(() => true)
-            getWeapons()
-            .then(data => {
-                setWeapons(() => data)
-                panelState.setRefreshData(undefined);
-            })
-            .catch(e => console.log(e))
+            getAbilities()
+            .then(
+                data => {
+                    setAbilities(() => data)
+                    panelState.setRefreshData(undefined);
+                }
+            )
+            .catch((e) => console.log(e))
             .finally(() => setLoading(() => false))
         },
         [panelState.refreshData]
     )
 
-    const rowsAchievements: TableHeaderTypes[] = useMemo(
-        () => {
-            if(!achievements) return []
-
-            return achievements.map(achievement => {
-                return {
-                    value: {
-                        achievementId: achievement.achievementId,
-                        name: achievement.name,
-                        points: achievement.points,
-                        requirements: achievement.requirements
-                    }
-                }
-            })
-        },
-        [achievements]
-    )
-
-    const rowsWeapons: TableRowsTypes[] = useMemo(
-        () => {
-            if(!weapons) return []
-
-            return weapons.map(weapon => {
-                return {
-                    value: {
-                        weaponId: weapon.weaponId,
-                        name: weapon.name,
-                        attackDamage: weapon.attackDamage,
-                        specialBonus: weapon.specialBonus,
-                        achievementId: weapon.achievementId
-                    }
-                }
-            })
-        },
-        [weapons]
-    )
-
     const createPanel = () => {
 
         panelState.setOpenPanel({
-            body: (<WeaponPanel />)
+            body: (<AbilityPanel />)
         });
+        // setAnchorEl(null);
     }
 
     return (
@@ -218,12 +173,12 @@ const WeaponsPage = observer(() => {
         >
             <TableComponent
                 tableHeaders={{
-                    items: tableHeadersWeapons,
+                    items: tableHeadersAbilities,
                     style: {
                         backgroundColor: "black",
                     }
                 }}
-                rows={rowsWeapons}
+                rows={rowsAbilities}
                 menuActionItems={ role === "admin" ? {
                     actions: menuActionItems,
                     title: {
@@ -232,11 +187,11 @@ const WeaponsPage = observer(() => {
                         style: styleHeader
                     }
                 } : undefined}
-                rowDetails={(value) => setCurrentWeapon(() => value)}
+                rowDetails={(value) => setCurrentAbility(() => value)}
                 loading={loading}
-                headerButtonTitle="Create weapon"
+                headerButtonTitle="Create ability"
                 headerButton={role === "admin" ? createPanel : undefined}
-                title="Weapons"
+                title="Abilities"
             />
             <Snackbar
                 anchorOrigin={{
@@ -250,6 +205,8 @@ const WeaponsPage = observer(() => {
             />
         </div>
     )
+
+
 })
 
-export default WeaponsPage;
+export default AbilityPage;
