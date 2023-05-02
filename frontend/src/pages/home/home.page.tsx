@@ -24,21 +24,26 @@ const HomePage = () => {
                 style={{
                     fontSize: "2.5rem",
                     fontWeight: "bold",
-                    marginBottom: "1rem",
-                    textAlign: "center"
-                }}
-            >
-            </div>
-            <div
-                style={{
-                    fontSize: "2.5rem",
-                    fontWeight: "bold",
                     textAlign: "center"
                 }}
             >
                 Plains of Primus
             </div>
-
+            <div
+                style={{
+                    fontWeight: "bold",
+                    marginBottom: "1rem",
+                    textAlign: "center",
+                    paddingLeft: "0.5rem",
+                    paddingRight: "1.5rem",
+                    boxSizing: "border-box"
+                }}
+            >
+                <p className="lead">Long before humans existed on the planet of Kratus, from outer space there came a being of immense power called Primus.</p>
+                <p className="lead">He soon dominated the entire world and started forging the layout of the planet to be to his liking. But soon, he realized he wanted someone to aknoledge his power and genius, so he guided the most evolved species on the planet into becoming the sapient race of humans.</p>
+                <p className="lead">In the present, no one knows why, but at some point the humans rebelled against Primus and managed to overthrow and kill him. Remnants of his body still remain today, in the place he was defeated, called the Plains of Primus, where different artifacts formed out of them.</p>
+                <p className="lead">Embark on an adventure to recover a significant part of his lost power and maybe continue his legacy!</p>
+            </div>
             <div
                 style={{
                     display: "flex",
@@ -53,7 +58,7 @@ const HomePage = () => {
                         marginTop: "5rem"
                     }}
                 >
-                    Membrii echipei:
+                    Members:
                 </div>
                 <div
                     style={{
@@ -63,10 +68,10 @@ const HomePage = () => {
                     }}
                 >
                     <ul>
+                        <li>Boranescu Alexandru-Nicolae</li>
+                        <li>Giugioiu Marian</li>
                         <li>Oprian Adrian George</li>
                         <li>Pintilie Sabina</li>
-                        <li>Marian Giugioiu</li>
-                        <li>Boranescu Alexandru-Nicolae</li>
                     </ul>
                 </div>
             </div>
