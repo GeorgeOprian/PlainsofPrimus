@@ -6,7 +6,7 @@ import { FormStyle } from "./armor.panel.style";
 import useLocalStorage from "react-use-localstorage";
 import { createArmorDB, editArmorDB, getAllAchievements } from "../../armor.page.requests";
 
-enum ArmorTypeEnum {
+export enum ArmorTypeEnum {
     Chestplate = "chestplate",
     Helmet = "helmet",
     Leggings = "leggings",
