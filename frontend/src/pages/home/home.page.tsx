@@ -28,7 +28,6 @@ const HomePage = () => {
                     textAlign: "center"
                 }}
             >
-                Proiect Data Warehouse & Business Intelligence
             </div>
             <div
                 style={{
@@ -37,7 +36,7 @@ const HomePage = () => {
                     textAlign: "center"
                 }}
             >
-                Platforma de inchiriere
+                Plains of Primus
             </div>
 
             <div

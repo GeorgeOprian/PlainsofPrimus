@@ -14,7 +14,7 @@ router.get('/', async (req, res) => {
     .catch(err => res.status(500).json({ error: err.message }));
 });
 
-router.get('/achievements/', checkRole(['client']), async (req, res) => {
+router.post('/achievements/', checkRole(['client']), async (req, res) => {
     Promise.all(req.body.map(async item => {
         return await Armor.findAll({
             where: { achievement_id: item.achievementId },

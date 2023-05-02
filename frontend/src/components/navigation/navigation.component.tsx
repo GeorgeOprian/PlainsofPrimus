@@ -48,6 +48,7 @@ const Navigation = () => {
                     <Link style={{...linkStyle}} to="/achievements">Achievements</Link>
                     <Link style={{...linkStyle}} to="/armors">Armors</Link>
                     <Link style={{...linkStyle}} to="/abilities">Abilities</Link>
+                    <Link style={{...linkStyle}} to="/character">Character</Link>
                 </div>
                 {
                     token ?

@@ -189,14 +189,15 @@ router.get('/:id', async (req, res, next) => {
 }); //client userId
 
 router.patch('/:id', checkRole(['client']), (req, res, next) => {
-    const {weapon, helmet, chestplate, leggings, boots, abilities, achievements} = req.body;
-    console.log(req.body);
+    const {name, weapon, helmet, chestplate, leggings, boots, abilities, achievements} = req.body;
+    
     Character.update({
+        name: name,
         weaponId: weapon ? weapon.weaponId: null,
-        helmetId: helmet? helmet.helmetId: null,
-        chestplateId: chestplate? chestplate.chestplateId : null,
-        leggingsId: leggings? leggings.leggingsId: null,
-        bootsId: boots? boots.bootsId: null
+        helmetId: helmet? helmet.armorId: null,
+        chestplateId: chestplate? chestplate.armorId : null,
+        leggingsId: leggings? leggings.armorId: null,
+        bootsId: boots? boots.armorId: null
     }, {
       where: { character_id: req.params.id },
       returning: true
